@@ -1,0 +1,13 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ServicesContent from '../content/services.md';
+---
+<Layout title="Services — Gehringer Conseil" description="Services de management de transition.">
+  <Header slot="header" />
+  <article class="prose">
+    <ServicesContent />
+  </article>
+  <Footer slot="footer" />
+</Layout>

@@ -1,0 +1,31 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+<Layout title="Contact — Gehringer Conseil" description="Contactez Gehringer Conseil">
+  <Header slot="header" />
+  <section class="max-w-xl">
+    <h2 class="text-2xl font-semibold mb-4">Contact</h2>
+    <p class="mb-4">Envie d’échanger ? Envoie-moi un message ci-dessous.</p>
+
+    <!-- Formulaire simple : si tu utilises Netlify Forms, laisse les attributs data-netlify -->
+    <form name="contact" method="POST" data-netlify="true">
+      <input type="hidden" name="form-name" value="contact" />
+      <label class="block mb-2">
+        <span>Nom</span>
+        <input name="name" class="w-full border px-3 py-2" />
+      </label>
+      <label class="block mb-2">
+        <span>Email</span>
+        <input type="email" name="email" class="w-full border px-3 py-2" />
+      </label>
+      <label class="block mb-4">
+        <span>Message</span>
+        <textarea name="message" rows="6" class="w-full border px-3 py-2"></textarea>
+      </label>
+      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded">Envoyer</button>
+    </form>
+  </section>
+  <Footer slot="footer" />
+</Layout>

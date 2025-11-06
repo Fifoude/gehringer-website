@@ -1,0 +1,10 @@
+@import "tailwindcss";
+/*@tailwind base;
+@tailwind components;
+@tailwind utilities;*/
+.font-logo {
+  font-family: "Great Vibes", cursive;
+  font-size: 2rem; /* adapte selon ton design */
+  font-weight: 400;
+  text-align: center; /* optionnel */
+}

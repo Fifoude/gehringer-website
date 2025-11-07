@@ -1,0 +1,104 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ServicesContent from '../content/services.md';
+---
+<Layout title="Mentions légales – Gehringer Conseil" description="Mentions légales du site Gehringer Conseil, dirigé par Philippe Gehringer.">
+  <Header slot="header" />
+    <section class="max-w-5xl mx-auto px-6 py-16 text-gray-700">
+    <h1 class="font-logo text-5xl text-center text-gray-900 mb-12">
+      Mentions légales
+    </h1>
+
+    <!-- Identité du propriétaire -->
+    <h2 class="text-2xl font-semibold mb-3">1. Éditeur du site</h2>
+    <p class="mb-8 leading-relaxed">
+      Le site <strong>www.gehringer.fr</strong> est édité par :
+      <br />
+      <strong>Gehringer Conseil</strong> — activité de management de transition et conseil en stratégie, innovation et transition écologique.
+      <br />
+      <strong>Dirigeant :</strong> Philippe Gehringer  
+      <br />
+      <strong>Email :</strong> <a href="mailto:pgehringer@pm.me" class="underline hover:text-slate-900">pgehringer@pm.me</a>
+      <br />
+      <strong>Téléphone :</strong> +33 6 14 36 53 77
+      <br />
+      <strong>Siège social :</strong> Suresnes (France)
+    </p>
+
+    <!-- Statut juridique -->
+    <h2 class="text-2xl font-semibold mb-3">2. Statut juridique</h2>
+    <p class="mb-8 leading-relaxed">
+      Gehringer Conseil est une activité exercée sous le statut d’<strong>entrepreneur individuel</strong>.  
+      <br />
+      N° SIREN : 948327267
+      <br />
+      TVA non applicable – article 293 B du CGI.
+    </p>
+
+    <!-- Hébergement -->
+    <h2 class="text-2xl font-semibold mb-3">3. Hébergement</h2>
+    <p class="mb-8 leading-relaxed">
+      Le site est hébergé en Europe par :  
+      <strong>Netlify, Inc.</strong>  
+      2325 3rd Street, Suite 296  
+      San Francisco, CA 94107, États-Unis  
+      <br />
+      <a href="https://www.netlify.com" target="_blank" class="underline hover:text-slate-900">www.netlify.com</a>
+    </p>
+
+    <!-- Propriété intellectuelle -->
+    <h2 class="text-2xl font-semibold mb-3">4. Propriété intellectuelle</h2>
+    <p class="mb-8 leading-relaxed">
+      L’ensemble du contenu du site (<strong>textes, images, graphismes, logo, icônes</strong>), ainsi que la structure du site,
+      sont la propriété exclusive de Philippe Gehringer, sauf mention contraire explicite.  
+      Toute reproduction, distribution ou modification sans autorisation préalable est interdite.
+    </p>
+
+    <!-- Données personnelles -->
+    <h2 class="text-2xl font-semibold mb-3">5. Données personnelles</h2>
+    <p class="mb-8 leading-relaxed">
+      Ce site ne collecte pas de données personnelles sans consentement explicite.  
+      Les seules informations transmises sont celles que vous communiquez volontairement via les moyens de contact (email ou LinkedIn).  
+      Ces informations ne sont jamais revendues ni partagées avec des tiers.
+      <br /><br />
+      Conformément au Règlement Général sur la Protection des Données (RGPD),
+      vous pouvez exercer vos droits d’accès, de rectification ou de suppression en écrivant à :
+      <a href="mailto:pgehringer@pm.me" class="underline hover:text-slate-900">pgehringer@pm.me</a>.
+    </p>
+
+    <!-- Responsabilité -->
+    <h2 class="text-2xl font-semibold mb-3">6. Limitation de responsabilité</h2>
+    <p class="mb-8 leading-relaxed">
+      Gehringer Conseil s’efforce d’assurer la fiabilité et l’exactitude des informations publiées.
+      Cependant, des erreurs ou omissions peuvent survenir.  
+      L’utilisateur reconnaît utiliser ces informations sous sa responsabilité exclusive.
+    </p>
+
+    <!-- Éco-conception -->
+    <h2 class="text-2xl font-semibold mb-3">7. Éco-conception et hébergement responsable</h2>
+    <p class="mb-8 leading-relaxed">
+      Le site a été conçu dans une logique de sobriété numérique et d’optimisation environnementale.  
+      Les technologies employées (Astro, hébergement Netlify) visent à minimiser l’empreinte carbone liée à la consultation des pages.
+    </p>
+
+    <!-- Contact -->
+    <h2 class="text-2xl font-semibold mb-3">8. Contact</h2>
+    <p class="leading-relaxed">
+      Pour toute question concernant le contenu ou les mentions légales de ce site, vous pouvez écrire à :
+      <a href="mailto:pgehringer@pm.me" class="underline hover:text-slate-900">pgehringer@pm.me</a>.
+    </p>
+
+    <!-- Bouton retour -->
+    <div class="text-center mt-16">
+      <a
+        href="/"
+        class="inline-block bg-gray-900 text-white px-8 py-3 rounded-xl hover:bg-gray-700 transition"
+      >
+        Retour à l’accueil
+      </a>
+    </div>
+  </section>
+  <Footer slot="footer" />
+</Layout>

@@ -1,0 +1,53 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ServicesContent from '../content/services.md';
+---
+<Layout title="Merci – Gehringer Conseil" description="Confirmation d'envoi de votre message à Gehringer Conseil.">
+  <Header slot="header" />
+    <section class="max-w-3xl mx-auto px-6 py-20 text-center text-gray-700">
+    <h1 class="font-logo text-5xl text-gray-900 mb-10">
+      Merci pour votre message !
+    </h1>
+
+    <p class="text-lg mb-8 leading-relaxed">
+      Votre message a bien été transmis à <strong>Philippe Gehringer</strong>.  
+      Vous recevrez une réponse dans les plus brefs délais.
+    </p>
+
+    <p class="text-gray-600 mb-12">
+      En attendant, vous pouvez découvrir mes services ou consulter mon parcours :
+    </p>
+
+    <div class="flex flex-col md:flex-row justify-center gap-4">
+      <a
+        href="/services"
+        class="bg-gray-900 text-white px-8 py-3 rounded-xl hover:bg-gray-700 transition"
+      >
+        Mes services
+      </a>
+      <a
+        href="/parcours"
+        class="bg-gray-100 text-gray-900 px-8 py-3 rounded-xl hover:bg-gray-200 transition"
+      >
+        Mon parcours
+      </a>
+    </div>
+
+    <p class="text-xs text-gray-500 mt-16">
+      © {new Date().getFullYear()} Gehringer Conseil — Tous droits réservés
+    </p>
+  </section>
+  <Footer slot="footer" />
+</Layout>
+
+<style is:global>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+</style>

@@ -6,8 +6,74 @@ import ServicesContent from '../content/services.md';
 ---
 <Layout title="Services — Gehringer Conseil" description="Services de management de transition.">
   <Header slot="header" />
-  <article class="prose">
-    <ServicesContent />
-  </article>
+  <section class="max-w-6xl mx-auto px-6 py-16">
+    <!-- Titre principal -->
+    <h1 class="font-logo text-5xl text-center text-gray-900 mb-12">
+      Mes Services
+    </h1>
+
+    <!-- Introduction -->
+    <p class="text-gray-700 text-center max-w-3xl mx-auto mb-12 leading-relaxed">
+      Mon rôle de <strong>manager de transition</strong> consiste à accompagner les entreprises dans leurs projets stratégiques, opérationnels et environnementaux.
+      J’interviens avec pragmatisme et engagement, en intégrant désormais une compétence renforcée sur les enjeux de <strong>transition énergétique</strong> et de <strong>RSE</strong>.
+    </p>
+
+    <!-- Grille de services -->
+    <div class="grid md:grid-cols-2 gap-8">
+      <!-- Service 1 -->
+      <div class="bg-white rounded-2xl shadow-md p-8 hover:shadow-lg transition">
+        <h2 class="text-2xl font-semibold mb-3 text-gray-900">
+          Management de transition
+        </h2>
+        <p class="text-gray-600 leading-relaxed">
+          Interventions ciblées pour piloter des situations complexes : réorganisation, croissance rapide, gestion de crise ou départ de dirigeants clés.
+          Objectif : assurer la continuité, redresser la performance et transmettre durablement.
+        </p>
+      </div>
+
+      <!-- Service 2 -->
+      <div class="bg-white rounded-2xl shadow-md p-8 hover:shadow-lg transition">
+        <h2 class="text-2xl font-semibold mb-3 text-gray-900">
+          Accompagnement stratégique & opérationnel
+        </h2>
+        <p class="text-gray-600 leading-relaxed">
+          De la vision à l’exécution : audit, plan d’action, conduite du changement, transformation digitale ou amélioration des processus.
+          Je mobilise les équipes autour d’objectifs clairs et mesurables.
+        </p>
+      </div>
+
+      <!-- Service 3 -->
+      <div class="bg-white rounded-2xl shadow-md p-8 hover:shadow-lg transition">
+        <h2 class="text-2xl font-semibold mb-3 text-gray-900">
+          Certification Bilan Carbone®
+        </h2>
+        <p class="text-gray-600 leading-relaxed">
+          Certifié <strong>Bilan Carbone®</strong>, j’accompagne les entreprises dans la mesure et la réduction de leurs émissions de gaz à effet de serre.
+          Mon approche intègre la décarbonation dans la stratégie RSE globale et la gouvernance d’entreprise.
+        </p>
+      </div>
+
+      <!-- Service 4 -->
+      <div class="bg-white rounded-2xl shadow-md p-8 hover:shadow-lg transition">
+        <h2 class="text-2xl font-semibold mb-3 text-gray-900">
+          Transition & Responsabilité Sociétale (RSE)
+        </h2>
+        <p class="text-gray-600 leading-relaxed">
+          Soutien à la mise en place de politiques RSE concrètes : reporting, évaluation des risques, plan d’action ESG et communication interne.
+          Un levier durable pour renforcer la performance et la crédibilité de votre entreprise.
+        </p>
+      </div>
+    </div>
+
+    <!-- Bouton retour -->
+    <div class="text-center mt-16">
+      <a
+        href="/"
+        class="inline-block bg-gray-900 text-white px-8 py-3 rounded-xl hover:bg-gray-700 transition"
+      >
+        Retour à l’accueil
+      </a>
+    </div>
+  </section>
   <Footer slot="footer" />
 </Layout>

@@ -1,10 +1,49 @@
-<header class="bg-slate-900 text-white">
-  <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-    <a href="/" class="font-logo text-lg">Gehringer</a>
-    <nav class="space-x-4">
-      <a href="/" class="hover:underline">Accueil</a>
-      <a href="/services" class="hover:underline">Services</a>
-      <a href="/contact" class="hover:underline">Contact</a>
+---
+const currentPath = Astro.url.pathname;
+---
+
+<header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+  <div class="max-w-5xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0">
+    <!-- Logo / Titre -->
+    <a href="/" class="flex items-baseline space-x-2">
+      <span class="font-logo text-2xl leading-none">Gehringer</span>
+      <span class="text-sm uppercase tracking-wide text-slate-300">Conseil</span>
+    </a>
+
+    <!-- Navigation -->
+    <nav class="space-x-4 text-sm font-medium text-center md:text-left">
+      <a
+        href="/"
+        class={`hover:text-slate-300 transition ${
+          currentPath === '/' ? 'text-amber-400 underline' : ''
+        }`}
+      >
+        Accueil
+      </a>
+      <a
+        href="/services"
+        class={`hover:text-slate-300 transition ${
+          currentPath === '/services' ? 'text-amber-400 underline' : ''
+        }`}
+      >
+        Services
+      </a>
+      <a
+        href="/parcours"
+        class={`hover:text-slate-300 transition ${
+          currentPath === '/parcours' ? 'text-amber-400 underline' : ''
+        }`}
+      >
+        Parcours
+      </a>
+      <a
+        href="/contact"
+        class={`hover:text-slate-300 transition ${
+          currentPath === '/contact' ? 'text-amber-400 underline' : ''
+        }`}
+      >
+        Contact
+      </a>
     </nav>
   </div>
 </header>

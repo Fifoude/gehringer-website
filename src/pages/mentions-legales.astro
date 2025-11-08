@@ -2,11 +2,13 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import ServicesContent from '../content/services.md';
+import { siteInfo } from '../config/siteInfo';
 ---
+
 <Layout title="Mentions légales – Gehringer Conseil" description="Mentions légales du site Gehringer Conseil, dirigé par Philippe Gehringer.">
   <Header slot="header" />
-    <section class="max-w-5xl mx-auto px-6 py-16 text-gray-700">
+  
+  <section class="max-w-5xl mx-auto px-6 py-16 text-gray-700">
     <h1 class="font-logo text-5xl text-center text-gray-900 mb-12">
       Mentions légales
     </h1>
@@ -14,13 +16,13 @@ import ServicesContent from '../content/services.md';
     <!-- Identité du propriétaire -->
     <h2 class="text-2xl font-semibold mb-3">1. Éditeur du site</h2>
     <p class="mb-8 leading-relaxed">
-      Le site <strong>www.gehringer.fr</strong> est édité par :
+      Le site <strong>gehringer.fr</strong> est édité par :
       <br />
-      <strong>Gehringer Conseil</strong> — activité de management de transition et conseil en stratégie, innovation et transition écologique.
+      <strong>Gehringer Conseil</strong> — société de conseil en management de transition, stratégie, innovation et transition écologique.
       <br />
       <strong>Dirigeant :</strong> Philippe Gehringer  
       <br />
-      <strong>Email :</strong> <a href="mailto:pgehringer@pm.me" class="underline hover:text-slate-900">pgehringer@pm.me</a>
+      <strong>Email :</strong> <a href={`mailto:${siteInfo.email}`} class="underline hover:text-slate-900 transition">{siteInfo.email}</a>
       <br />
       <strong>Téléphone :</strong> +33 6 14 36 53 77
       <br />
@@ -30,11 +32,13 @@ import ServicesContent from '../content/services.md';
     <!-- Statut juridique -->
     <h2 class="text-2xl font-semibold mb-3">2. Statut juridique</h2>
     <p class="mb-8 leading-relaxed">
-      Gehringer Conseil est une activité exercée sous le statut d’<strong>entrepreneur individuel</strong>.  
+      Gehringer Conseil est une <strong>SAS (Société par Actions Simplifiée)</strong> enregistrée en France.  
       <br />
-      N° SIREN : 948327267
+      <strong>N° SIREN :</strong> 948 327 267  
       <br />
-      TVA non applicable – article 293 B du CGI.
+      <strong>Numéro de TVA intracommunautaire :</strong> FR40948327267  
+      <br />
+      <strong>Code APE :</strong> 7022Z — Conseil pour les affaires et autres conseils de gestion  
     </p>
 
     <!-- Hébergement -->
@@ -51,7 +55,7 @@ import ServicesContent from '../content/services.md';
     <!-- Propriété intellectuelle -->
     <h2 class="text-2xl font-semibold mb-3">4. Propriété intellectuelle</h2>
     <p class="mb-8 leading-relaxed">
-      L’ensemble du contenu du site (<strong>textes, images, graphismes, logo, icônes</strong>), ainsi que la structure du site,
+      L’ensemble du contenu du site (<strong>textes, images, graphismes, logo, icônes</strong>), ainsi que sa structure,
       sont la propriété exclusive de Philippe Gehringer, sauf mention contraire explicite.  
       Toute reproduction, distribution ou modification sans autorisation préalable est interdite.
     </p>
@@ -65,7 +69,7 @@ import ServicesContent from '../content/services.md';
       <br /><br />
       Conformément au Règlement Général sur la Protection des Données (RGPD),
       vous pouvez exercer vos droits d’accès, de rectification ou de suppression en écrivant à :
-      <a href="mailto:pgehringer@pm.me" class="underline hover:text-slate-900">pgehringer@pm.me</a>.
+      <a href={`mailto:${siteInfo.email}`} class="underline hover:text-slate-900 transition">{siteInfo.email}</a>.
     </p>
 
     <!-- Responsabilité -->
@@ -87,7 +91,7 @@ import ServicesContent from '../content/services.md';
     <h2 class="text-2xl font-semibold mb-3">8. Contact</h2>
     <p class="leading-relaxed">
       Pour toute question concernant le contenu ou les mentions légales de ce site, vous pouvez écrire à :
-      <a href="mailto:pgehringer@pm.me" class="underline hover:text-slate-900">pgehringer@pm.me</a>.
+      <a href={`mailto:${siteInfo.email}`} class="underline hover:text-slate-900 transition">{siteInfo.email}</a>.
     </p>
 
     <!-- Bouton retour -->
@@ -100,5 +104,6 @@ import ServicesContent from '../content/services.md';
       </a>
     </div>
   </section>
+
   <Footer slot="footer" />
 </Layout>

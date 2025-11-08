@@ -1,16 +1,47 @@
 ---
 // Layout.astro
 import '../styles/global.css';
-const { title = "Gehringer Conseil", description = "Manager de transition - Gehringer Conseil" } = Astro.props;
+import { defaultSEO } from '../config/seo';
+
+const {
+  title = defaultSEO.title,
+  description = defaultSEO.description,
+  image = defaultSEO.image,
+  siteName = defaultSEO.siteName,
+  siteUrl = defaultSEO.siteUrl,
+  author = defaultSEO.author,
+} = Astro.props;
 ---
+
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="description" content={description} />
+
+    <!-- Balises SEO de base -->
     <title>{title}</title>
-	<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <meta name="description" content={description} />
+    <meta name="author" content={author} />
+
+    <!-- Open Graph (partage LinkedIn / Facebook) -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:url" content={`${siteUrl}${Astro.url.pathname}`} />
+    <meta property="og:image" content={image} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+
+    <!-- Favicon & Fonts -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
   </head>
+
   <body class="antialiased text-gray-900 bg-white">
     <slot name="header" />
     <main class="max-w-4xl mx-auto px-4 py-8">

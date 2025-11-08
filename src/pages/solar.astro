@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import ServicesContent from '../content/services.md';
 ---
 
+
 <Layout title="Tableau de Bord Solaire - APsystems">
     <style>
         .solar-container {
@@ -130,23 +131,61 @@ import ServicesContent from '../content/services.md';
             border-radius: 10px;
             color: white;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 120px;
         }
         
         .stat-label {
             font-size: 14px;
             opacity: 0.9;
             margin-bottom: 10px;
+            white-space: nowrap;
         }
         
         .stat-value {
             font-size: 32px;
             font-weight: bold;
+            white-space: nowrap;
         }
         
         .stat-unit {
             font-size: 16px;
             opacity: 0.8;
             margin-top: 5px;
+            white-space: nowrap;
+        }
+        
+        .energy-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .energy-item-label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .energy-item-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .energy-section {
+            margin-bottom: 30px;
+        }
+        
+        .energy-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
         }
         
         .info-card {
@@ -253,6 +292,7 @@ import ServicesContent from '../content/services.md';
             <div class="tabs">
                 <div class="tab active" data-tab="system">Système</div>
                 <div class="tab" data-tab="energy">Énergie</div>
+                <div class="tab" data-tab="balance">Bilan</div>
                 <div class="tab" data-tab="inverters">Onduleurs</div>
             </div>
             
@@ -264,6 +304,11 @@ import ServicesContent from '../content/services.md';
             <div id="energyTab" class="tab-content">
                 <h2>Production d'Énergie</h2>
                 <div id="energyStats"></div>
+            </div>
+
+            <div id="balanceTab" class="tab-content">
+                <h2>Bilan Énergétique du Jour</h2>
+                <div id="balanceStats"></div>
             </div>
             
             <div id="invertersTab" class="tab-content">
@@ -351,6 +396,25 @@ import ServicesContent from '../content/services.md';
                 }
                 displayInverters(inverters.data);
                 
+                // Charger les compteurs (meters)
+                const meters = await makeRequest(`/user/api/v2/systems/meters/${config.systemId}`);
+                if (meters.code === 0 && meters.data && meters.data.length > 0) {
+                    // Charger les données du premier compteur
+                    const meterId = meters.data[0];
+                    const meterSummary = await makeRequest(`/user/api/v2/systems/${config.systemId}/devices/meter/summary/${meterId}`);
+                    if (meterSummary.code === 0) {
+                        displayEnergyBalance(meterSummary.data);
+                    }
+                } else {
+                    // Si pas de compteur, afficher un message
+                    document.getElementById('balanceStats').innerHTML = `
+                        <div class="alert" style="background: #fff3cd; border-color: #ffc107; color: #856404;">
+                            <div class="alert-title">ℹ️ Aucun compteur détecté</div>
+                            <p>Votre système ne semble pas avoir de compteur activé. Le bilan énergétique n'est pas disponible.</p>
+                        </div>
+                    `;
+                }
+                
                 document.getElementById('dataSection').classList.add('visible');
                 
             } catch (error) {
@@ -403,27 +467,89 @@ import ServicesContent from '../content/services.md';
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-label">Aujourd'hui</div>
-                        <div class="stat-value">${data.today}</div>
+                        <div class="stat-value">${parseFloat(data.today).toFixed(2)}</div>
                         <div class="stat-unit">kWh</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Ce mois</div>
-                        <div class="stat-value">${data.month}</div>
+                        <div class="stat-value">${parseFloat(data.month).toFixed(2)}</div>
                         <div class="stat-unit">kWh</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Cette année</div>
-                        <div class="stat-value">${data.year}</div>
+                        <div class="stat-value">${parseFloat(data.year).toFixed(2)}</div>
                         <div class="stat-unit">kWh</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Total</div>
-                        <div class="stat-value">${data.lifetime}</div>
+                        <div class="stat-value">${parseFloat(data.lifetime).toFixed(2)}</div>
                         <div class="stat-unit">kWh</div>
                     </div>
                 </div>
             `;
             document.getElementById('energyStats').innerHTML = html;
+        }
+
+        function displayEnergyBalance(data) {
+            const today = data.today || {};
+            const produced = parseFloat(today.produced || 0);
+            const consumed = parseFloat(today.consumed || 0);
+            const imported = parseFloat(today.imported || 0);
+            const exported = parseFloat(today.exported || 0);
+            const selfConsumed = produced - exported;
+            const selfConsumptionRate = produced > 0 ? (selfConsumed / produced * 100) : 0;
+            const autonomyRate = consumed > 0 ? (selfConsumed / consumed * 100) : 0;
+
+            const html = `
+                <div class="energy-section">
+                    <h3>📊 Flux énergétiques</h3>
+                    <div class="energy-item">
+                        <span class="energy-item-label">☀️ Énergie produite</span>
+                        <span class="energy-item-value">${produced.toFixed(2)} kWh</span>
+                    </div>
+                    <div class="energy-item">
+                        <span class="energy-item-label">🏠 Énergie consommée</span>
+                        <span class="energy-item-value">${consumed.toFixed(2)} kWh</span>
+                    </div>
+                    <div class="energy-item">
+                        <span class="energy-item-label">⬆️ Énergie injectée (réseau)</span>
+                        <span class="energy-item-value">${exported.toFixed(2)} kWh</span>
+                    </div>
+                    <div class="energy-item">
+                        <span class="energy-item-label">⬇️ Énergie importée (réseau)</span>
+                        <span class="energy-item-value">${imported.toFixed(2)} kWh</span>
+                    </div>
+                </div>
+
+                <div class="energy-section">
+                    <h3>📈 Indicateurs</h3>
+                    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                            <div class="stat-label">Autoconsommation</div>
+                            <div class="stat-value">${selfConsumed.toFixed(2)}</div>
+                            <div class="stat-unit">kWh</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                            <div class="stat-label">Taux d'autoconso.</div>
+                            <div class="stat-value">${selfConsumptionRate.toFixed(0)}</div>
+                            <div class="stat-unit">%</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                            <div class="stat-label">Taux d'autonomie</div>
+                            <div class="stat-value">${autonomyRate.toFixed(0)}</div>
+                            <div class="stat-unit">%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <p style="margin: 0; color: #004085; font-size: 14px;">
+                        <strong>💡 Conseil :</strong> Un taux d'autoconsommation élevé indique que vous utilisez directement l'énergie que vous produisez. 
+                        Un taux d'autonomie élevé indique que vous dépendez peu du réseau électrique.
+                    </p>
+                </div>
+            `;
+            document.getElementById('balanceStats').innerHTML = html;
         }
 
         function displayInverters(data) {

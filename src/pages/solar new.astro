@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import EnergyCharts from '../components/EnergyCharts.astro';
 ---
 
 <Layout title="Tableau de Bord Solaire - APsystems">
@@ -245,6 +246,7 @@ import Footer from '../components/Footer.astro';
                 <div class="tab" data-tab="energy">Énergie</div>
                 <div class="tab" data-tab="balance">Bilan</div>
                 <div class="tab" data-tab="inverters">Onduleurs</div>
+                <div class="tab" data-tab="charts">Graphiques</div>
             </div>
             
             <div id="systemTab" class="tab-content active">
@@ -265,6 +267,25 @@ import Footer from '../components/Footer.astro';
             <div id="invertersTab" class="tab-content">
                 <h2>Onduleurs</h2>
                 <div id="invertersList"></div>
+            </div>
+            <div id="chartsTab" class="tab-content">
+                <h2>Visualisation des données</h2>
+                <EnergyCharts
+                    dailyData={[
+                        { time: '6h', production: 0.3 },
+                        { time: '8h', production: 1.4 },
+                        { time: '10h', production: 3.1 },
+                        { time: '12h', production: 5.0 },
+                        { time: '14h', production: 4.8 },
+                        { time: '16h', production: 2.9 },
+                        { time: '18h', production: 0.9 },
+                    ]}
+                    balanceData={[
+                        { name: 'Autoconsommée', value: 4.2 },
+                        { name: 'Injectée', value: 1.8 },
+                        { name: 'Importée', value: 0.7 },
+                    ]}
+                />
             </div>
         </div>
     </div>

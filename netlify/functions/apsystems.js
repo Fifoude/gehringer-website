@@ -82,19 +82,38 @@ exports.handler = async (event) => {
     }
 
     try {
-        const params = event.queryStringParameters || {};
-        const { appId, appSecret, endpoint } = params;
+        // Récupérer les identifiants depuis les variables d'environnement
+        const appId = process.env.APSYSTEMS_APP_ID;
+        const appSecret = process.env.APSYSTEMS_APP_SECRET;
+        const systemId = process.env.APSYSTEMS_SYSTEM_ID;
 
-        if (!appId || !appSecret || !endpoint) {
+        // Vérifier que les variables sont définies
+        if (!appId || !appSecret || !systemId) {
             return {
-                statusCode: 400,
+                statusCode: 500,
                 headers,
-                body: JSON.stringify({ error: 'Paramètres manquants (appId, appSecret, endpoint)' })
+                body: JSON.stringify({ 
+                    error: 'Configuration serveur incomplète. Veuillez contacter l\'administrateur.' 
+                })
             };
         }
 
+        const params = event.queryStringParameters || {};
+        const { endpoint } = params;
+
+        if (!endpoint) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({ error: 'Le paramètre endpoint est requis' })
+            };
+        }
+
+        // Remplacer {systemId} dans l'endpoint si présent
+        const finalEndpoint = endpoint.replace('{systemId}', systemId);
+
         // Extraire le path pour la signature (dernier segment de l'URL)
-        const pathParts = endpoint.split('/');
+        const pathParts = finalEndpoint.split('/');
         const path = pathParts[pathParts.length - 1];
 
         const timestamp = Date.now().toString();
@@ -113,7 +132,7 @@ exports.handler = async (event) => {
         };
 
         const baseUrl = 'https://api.apsystemsema.com:9282';
-        const fullUrl = baseUrl + endpoint;
+        const fullUrl = baseUrl + finalEndpoint;
 
         console.log('Requête vers:', fullUrl);
 

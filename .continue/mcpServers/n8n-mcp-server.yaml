@@ -1,0 +1,29 @@
+name: n8n-mcp
+version: 0.0.1
+schema: v1
+
+mcpServers:
+  - name: n8n-mcp
+
+    # Comment lancer le serveur MCP n8n
+    command: npx
+    args:
+      - n8n-mcp
+
+    # Variables d'environnement pour le serveur
+    env:
+      MCP_MODE: "stdio"
+      LOG_LEVEL: "error"
+      DISABLE_CONSOLE_OUTPUT: "true"
+
+      # Ton instance n8n self-host
+      N8N_API_URL: "https://n8n.gehringer.fr"
+
+      # --- Option simple (pour tester) ---
+      # Mets directement ta clé ici (moins sécurisé) :
+      # 🔐 Option propre : mettre la clé dans les "secrets" Continue
+      N8N_API_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5MDkyYzE4Yi00MDIxLTRiMzQtYTdkMi1iYTBmZTE0NDJiMzAiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYzMzk2NzkzfQ.bUzsgGReC9o97B6gCMHywPZWqKNIy-X0z5Ae3rxeoPE
+
+      # --- Option propre (recommandée) ---
+      # Utiliser un secret Continue nommé N8N_API_KEY :
+      # N8N_API_KEY: "{{ secrets.N8N_API_KEY }}"

@@ -11,7 +11,11 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.16",
     "astro": "^5.15.3",
+    "autoprefixer": "^10.4.22",
+    "chart.js": "^4.5.1",
+    "chartjs-plugin-annotation": "^3.1.0",
+    "postcss": "^8.5.6",
     "recharts": "^3.3.0",
-    "tailwindcss": "^4.1.16"
+    "tailwindcss": "^4.1.17"
   }
 }

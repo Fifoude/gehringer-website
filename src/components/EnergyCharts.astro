@@ -1,56 +1,49 @@
 ---
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
-const { dailyData = [], balanceData = [] } = Astro.props;
+import '../styles/global.css';
+import { defaultSEO } from '../config/seo';
 
-function formatFr(value) {
-  if (typeof value !== 'number') return value;
-  return value
-    .toLocaleString('fr-FR', { minimumFractionDigits: 2 })
-    .replace('.', ',');
-}
+const {
+  title = defaultSEO.title,
+  description = defaultSEO.description,
+  image = defaultSEO.image,
+  siteName = defaultSEO.siteName,
+  siteUrl = defaultSEO.siteUrl,
+  author = defaultSEO.author,
+} = Astro.props;
 ---
 
-<div style="display: flex; flex-direction: column; gap: 40px;">
-  <!-- Graphique 1 -->
-  <div class="card">
-    <h3 style="color:#667eea; margin-bottom:15px;">☀️ Production solaire du jour</h3>
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={dailyData}>
-        <defs>
-          <linearGradient id="gradEnergy" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#667eea" stopOpacity={0.8}/>
-            <stop offset="95%" stopColor="#667eea" stopOpacity={0.1}/>
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#ddd" />
-        <XAxis dataKey="time" />
-        <YAxis tickFormatter={(v) => v.toLocaleString('fr-FR')} />
-        <Tooltip formatter={(v) => `${formatFr(v)} kWh`} />
-        <Line type="monotone" dataKey="production" stroke="#667eea" strokeWidth={3} fill="url(#gradEnergy)" dot={false} />
-      </LineChart>
-    </ResponsiveContainer>
-  </div>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={author} />
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:url" content={`${siteUrl}${Astro.url.pathname}`} />
+    <meta property="og:image" content={image} />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+    
+    <!-- Favicon & Fonts -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+  </head>
 
-  <!-- Graphique 2 -->
-  <div class="card">
-    <h3 style="color:#667eea; margin-bottom:15px;">⚡ Répartition énergétique</h3>
-    <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
-        <Pie
-          dataKey="value"
-          data={balanceData}
-          cx="50%"
-          cy="50%"
-          outerRadius={100}
-          label={({ name, value }) => `${name} : ${formatFr(value)} kWh`}
-        >
-          <Cell fill="#22c55e" />
-          <Cell fill="#facc15" />
-          <Cell fill="#3b82f6" />
-        </Pie>
-        <Tooltip formatter={(v) => `${formatFr(v)} kWh`} />
-        <Legend />
-      </PieChart>
-    </ResponsiveContainer>
-  </div>
-</div>
+  <body class="antialiased text-gray-900 bg-white">
+    <slot name="header" />
+    <main class="min-h-screen bg-white">
+      <slot />
+    </main>
+    <slot name="footer" />
+  </body>
+</html>

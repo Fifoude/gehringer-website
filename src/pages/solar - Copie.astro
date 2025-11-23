@@ -1,0 +1,649 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<Layout title="Tableau de Bord Solaire - Production">
+    <Header slot="header" />
+
+    <style>
+        .solar-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition:
+                transform 0.2s,
+                box-shadow 0.2s;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #e8eaff;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .error {
+            background: #ff4444;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .error.visible {
+            display: block;
+        }
+
+        .success {
+            background: #44aa44;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .success.visible {
+            display: block;
+        }
+
+        .data-section {
+            display: none;
+        }
+
+        .data-section.visible {
+            display: block;
+        }
+
+        .alert {
+            background: #d1ecf1;
+            border: 2px solid #0c5460;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #0c5460;
+        }
+
+        .alert-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #999;
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .tab-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .tab-empty-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+    </style>
+
+    <div class="solar-container">
+        <div class="card">
+            <h1>☀️ Tableau de Bord Solaire</h1>
+
+            <div class="alert">
+                <div class="alert-title">ℹ️ Information</div>
+                <p>
+                    Cette page affiche les données de production solaire en
+                    provenance des Data Tables n8n.
+                </p>
+            </div>
+
+            <button id="loadBtn">📊 Charger les données d'aujourd'hui</button>
+            <div id="error" class="error"></div>
+            <div id="success" class="success"></div>
+        </div>
+
+        <div id="dataSection" class="data-section card">
+            <div class="tabs">
+                <div class="tab active" data-tab="production">
+                    Production Horaire
+                </div>
+                <div class="tab" data-tab="energy">Énergie</div>
+                <div class="tab" data-tab="balance">Bilan</div>
+                <div class="tab" data-tab="solar">Données Solaires</div>
+            </div>
+
+            <div id="productionTab" class="tab-content active">
+                <h2>Production d'Énergie Horaire</h2>
+                <div id="chartContainer" class="chart-container">
+                    <canvas id="productionChart"></canvas>
+                </div>
+                <div id="chartTimestamp" class="timestamp"></div>
+            </div>
+
+            <div id="energyTab" class="tab-content">
+                <h2>Énergie</h2>
+                <div class="tab-empty">
+                    <div class="tab-empty-icon">🔨</div>
+                    <p>Cet onglet est en construction...</p>
+                </div>
+            </div>
+
+            <div id="balanceTab" class="tab-content">
+                <h2>Bilan</h2>
+                <div class="tab-empty">
+                    <div class="tab-empty-icon">🔨</div>
+                    <p>Cet onglet est en construction...</p>
+                </div>
+            </div>
+
+            <div id="solarTab" class="tab-content">
+                <h2>Données Solaires</h2>
+                <div class="tab-empty">
+                    <div class="tab-empty-icon">🔨</div>
+                    <p>Cet onglet est en construction...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <Footer slot="footer" />
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+    ></script>
+    <script>
+        // ============================================================================
+        // CONSTANTES DE CONFIGURATION
+        // ============================================================================
+
+        /** Durée d'affichage des messages de succès/erreur en millisecondes */
+        const MESSAGE_DISPLAY_DURATION = 5000;
+
+        /** Durée de validité du cache en millisecondes (5 minutes) */
+        const CACHE_DURATION = 5 * 60 * 1000;
+
+        /** Configuration des couleurs du thème principal */
+        const THEME_COLORS = {
+            primary: "#667eea",
+            primaryRgba: "rgba(102, 126, 234, 0.1)",
+            text: "#333",
+            textLight: "#666",
+            white: "#fff",
+            gridLines: "rgba(0,0,0,0.05)",
+        };
+
+        // ============================================================================
+        // VARIABLES GLOBALES
+        // ============================================================================
+
+        /** Instance du graphique Chart.js */
+        let chart = null;
+
+        /** Cache simple pour éviter les rechargements inutiles */
+        let dataCache = {
+            data: null,
+            date: null,
+            timestamp: null,
+        };
+
+        // ============================================================================
+        // GESTION DE L'INTERFACE UTILISATEUR
+        // ============================================================================
+
+        /**
+         * Initialise la gestion des onglets
+         * Permet de basculer entre les différentes vues (Production, Énergie, Bilan, Solaire)
+         */
+        function initializeTabs() {
+            document.querySelectorAll(".tab").forEach((tab) => {
+                tab.addEventListener("click", () => {
+                    const tabName = tab.dataset.tab;
+
+                    // Désactiver tous les onglets et contenus
+                    document
+                        .querySelectorAll(".tab")
+                        .forEach((t) => t.classList.remove("active"));
+                    document
+                        .querySelectorAll(".tab-content")
+                        .forEach((c) => c.classList.remove("active"));
+
+                    // Activer l'onglet et le contenu sélectionnés
+                    tab.classList.add("active");
+                    document
+                        .getElementById(tabName + "Tab")
+                        .classList.add("active");
+                });
+            });
+        }
+
+        /**
+         * Affiche un message d'erreur à l'utilisateur
+         * @param {string} message - Le message d'erreur à afficher
+         */
+        function showError(message) {
+            const errorEl = document.getElementById("error");
+            const successEl = document.getElementById("success");
+
+            errorEl.textContent = "❌ " + message;
+            errorEl.classList.add("visible");
+            successEl.classList.remove("visible");
+
+            // Auto-masquer après un délai
+            setTimeout(
+                () => errorEl.classList.remove("visible"),
+                MESSAGE_DISPLAY_DURATION,
+            );
+        }
+
+        /**
+         * Affiche un message de succès à l'utilisateur
+         * @param {string} message - Le message de succès à afficher
+         */
+        function showSuccess(message) {
+            const successEl = document.getElementById("success");
+            const errorEl = document.getElementById("error");
+
+            successEl.textContent = "✅ " + message;
+            successEl.classList.add("visible");
+            errorEl.classList.remove("visible");
+
+            // Auto-masquer après un délai
+            setTimeout(
+                () => successEl.classList.remove("visible"),
+                MESSAGE_DISPLAY_DURATION,
+            );
+        }
+
+        // ============================================================================
+        // GESTION DU CACHE
+        // ============================================================================
+
+        /**
+         * Vérifie si les données en cache sont encore valides
+         * @param {string} date - La date pour laquelle on veut vérifier le cache
+         * @returns {boolean} true si le cache est valide, false sinon
+         */
+        function isCacheValid(date) {
+            if (
+                !dataCache.data ||
+                !dataCache.timestamp ||
+                dataCache.date !== date
+            ) {
+                return false;
+            }
+
+            const now = Date.now();
+            const cacheAge = now - dataCache.timestamp;
+
+            return cacheAge < CACHE_DURATION;
+        }
+
+        /**
+         * Met à jour le cache avec de nouvelles données
+         * @param {Array} data - Les données à mettre en cache
+         * @param {string} date - La date associée aux données
+         */
+        function updateCache(data, date) {
+            dataCache = {
+                data: data,
+                date: date,
+                timestamp: Date.now(),
+            };
+        }
+
+        // ============================================================================
+        // CHARGEMENT DES DONNÉES
+        // ============================================================================
+
+        /**
+         * Charge les données solaires depuis l'API Netlify
+         * Utilise un système de cache pour éviter les requêtes inutiles
+         * @returns {Promise<void>}
+         */
+        async function loadSolarData() {
+            const btn = document.getElementById("loadBtn");
+            btn.disabled = true;
+            btn.textContent = "⏳ Chargement...";
+
+            try {
+                // Obtenir la date du jour au format ISO (YYYY-MM-DD)
+                const today = new Date();
+                const todayDate = today.toISOString().split("T")[0];
+
+                // Vérifier si nous avons des données valides en cache
+                if (isCacheValid(todayDate)) {
+                    console.log("Utilisation des données en cache");
+                    displayProductionChart(dataCache.data);
+                    showSuccess(
+                        `${dataCache.data.length} enregistrements (cache)`,
+                    );
+                    document
+                        .getElementById("dataSection")
+                        .classList.add("visible");
+                    return;
+                }
+
+                // Charger les données depuis l'API
+                console.log("Chargement des données pour la date:", todayDate);
+                const response = await fetch(
+                    `/.netlify/functions/solar-data?date=${todayDate}`,
+                );
+
+                // Gestion des erreurs HTTP
+                if (!response.ok) {
+                    let errorMessage = "Erreur lors du chargement des données";
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.error || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage =
+                            errorText || `Erreur HTTP ${response.status}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                // Parser et valider la réponse
+                const result = await response.json();
+                console.log("Réponse complète:", result);
+
+                if (!result.success || !result.data) {
+                    throw new Error("Données invalides reçues");
+                }
+
+                if (!Array.isArray(result.data) || result.data.length === 0) {
+                    throw new Error(
+                        "Aucune donnée disponible pour la date sélectionnée",
+                    );
+                }
+
+                // Mettre à jour le cache et afficher les données
+                updateCache(result.data, todayDate);
+                displayProductionChart(result.data);
+                showSuccess(`${result.rowCount} enregistrements chargés`);
+                document.getElementById("dataSection").classList.add("visible");
+            } catch (error) {
+                showError(error.message);
+                console.error("Erreur lors du chargement:", error);
+            } finally {
+                // Rétablir l'état du bouton
+                btn.disabled = false;
+                btn.textContent = "📊 Charger les données d'aujourd'hui";
+            }
+        }
+
+        // ============================================================================
+        // TRAITEMENT DES DONNÉES
+        // ============================================================================
+
+        /**
+         * Calcule la production horaire à partir des données cumulatives
+         *
+         * Les données sources contiennent des valeurs cumulatives de production.
+         * Cette fonction calcule la production réelle pour chaque heure en faisant
+         * la différence entre la valeur cumulative actuelle et la précédente.
+         *
+         * @param {Array} energyData - Tableau d'objets contenant {hour, produced_kwh, timestamp}
+         * @returns {Array} Tableau d'objets {hour, production, timestamp} avec production horaire
+         */
+        function calculateHourlyProduction(energyData) {
+            // Validation des données d'entrée
+            if (!energyData || energyData.length === 0) {
+                console.warn("Aucune donnée à traiter");
+                return [];
+            }
+
+            console.log("Nombre de données reçues:", energyData.length);
+            console.log("Premier élément:", energyData[0]);
+
+            // Trier par heure croissante pour garantir des calculs corrects
+            // Utilisation de spread operator pour éviter de modifier le tableau original
+            const sorted = [...energyData].sort((a, b) => a.hour - b.hour);
+
+            // Calculer la production pour chaque heure
+            const hourlyProductionData = sorted.map((item, index) => {
+                const currentCumulativeKwh = parseFloat(item.produced_kwh) || 0;
+
+                // Pour la première heure, on suppose que la production cumulative précédente est 0
+                // Sinon, on prend la valeur cumulative de l'heure précédente
+                const previousCumulativeKwh =
+                    index === 0
+                        ? 0
+                        : parseFloat(sorted[index - 1].produced_kwh) || 0;
+
+                // Production horaire = différence entre cumulatif actuel et précédent
+                // Math.max(0, ...) évite les valeurs négatives en cas d'anomalie
+                const hourlyProduction = Math.max(
+                    0,
+                    currentCumulativeKwh - previousCumulativeKwh,
+                );
+
+                return {
+                    hour: item.hour,
+                    production: hourlyProduction,
+                    timestamp: item.timestamp,
+                };
+            });
+
+            console.log("Production horaire calculée:", hourlyProductionData);
+            return hourlyProductionData;
+        }
+
+        // ============================================================================
+        // AFFICHAGE DU GRAPHIQUE
+        // ============================================================================
+
+        /**
+         * Affiche un graphique de production horaire avec Chart.js
+         * @param {Array} energyData - Les données brutes de production
+         */
+        function displayProductionChart(energyData) {
+            const hourlyData = calculateHourlyProduction(energyData);
+
+            // Détruire l'ancien graphique pour éviter les fuites mémoire
+            if (chart) {
+                chart.destroy();
+                chart = null;
+            }
+
+            const ctx = document
+                .getElementById("productionChart")
+                .getContext("2d");
+
+            // Configuration du graphique Chart.js
+            chart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    // Étiquettes des heures au format HH:00
+                    labels: hourlyData.map(
+                        (d) => `${String(d.hour).padStart(2, "0")}:00`,
+                    ),
+                    datasets: [
+                        {
+                            label: "Production (kWh)",
+                            data: hourlyData.map((d) =>
+                                d.production.toFixed(2),
+                            ),
+                            borderColor: THEME_COLORS.primary,
+                            backgroundColor: THEME_COLORS.primaryRgba,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4, // Courbe lissée
+                            pointRadius: 4,
+                            pointBackgroundColor: THEME_COLORS.primary,
+                            pointBorderColor: THEME_COLORS.white,
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 6,
+                            yAxisID: "y",
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: "top",
+                            labels: {
+                                font: { size: 14, weight: "bold" },
+                                color: THEME_COLORS.text,
+                                padding: 15,
+                            },
+                        },
+                        tooltip: {
+                            backgroundColor: "rgba(0,0,0,0.8)",
+                            titleColor: THEME_COLORS.white,
+                            bodyColor: THEME_COLORS.white,
+                            callbacks: {
+                                label: function (context) {
+                                    return `Production: ${context.parsed.y} kWh`;
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: "Production (kWh)",
+                            },
+                            ticks: {
+                                color: THEME_COLORS.textLight,
+                            },
+                            grid: {
+                                color: THEME_COLORS.gridLines,
+                            },
+                        },
+                        x: {
+                            ticks: {
+                                color: THEME_COLORS.textLight,
+                            },
+                            grid: {
+                                color: THEME_COLORS.gridLines,
+                            },
+                        },
+                    },
+                },
+            });
+
+            // Afficher l'horodatage de la dernière mise à jour
+            const lastTimestamp = hourlyData[hourlyData.length - 1]?.timestamp;
+            if (lastTimestamp) {
+                const date = new Date(lastTimestamp);
+                document.getElementById("chartTimestamp").textContent =
+                    `Dernière mise à jour: ${date.toLocaleString("fr-FR")}`;
+            }
+        }
+
+        // ============================================================================
+        // INITIALISATION
+        // ============================================================================
+
+        /**
+         * Point d'entrée principal - Initialisation au chargement de la page
+         */
+        document.addEventListener("DOMContentLoaded", () => {
+            // Initialiser la gestion des onglets
+            initializeTabs();
+
+            // Charger automatiquement les données du jour
+            loadSolarData();
+        });
+
+        // Événement pour le bouton de rechargement manuel
+        document
+            .getElementById("loadBtn")
+            .addEventListener("click", loadSolarData);
+    </script>
+</Layout>

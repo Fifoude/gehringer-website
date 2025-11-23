@@ -13,7 +13,10 @@
       "dependencies": [
         "npm:@tailwindcss/vite@^4.1.16",
         "npm:astro@^5.15.3",
-        "npm:tailwindcss@^4.1.16"
+        "npm:autoprefixer@^10.4.22",
+        "npm:postcss@^8.5.6",
+        "npm:recharts@^3.3.0",
+        "npm:tailwindcss@^4.1.17"
       ]
     }
   }

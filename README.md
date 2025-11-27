@@ -41,6 +41,26 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
-## 👀 Want to learn more?
+## � Git Commands
+
+Commandes pour mettre à jour GitHub depuis le terminal :
+
+| Command                                      | Action                                           |
+| :------------------------------------------- | :----------------------------------------------- |
+| `git status`                                 | Affiche l'état des fichiers modifiés            |
+| `git add .`                                  | Ajoute tous les fichiers modifiés au commit      |
+| `git add <fichier>`                          | Ajoute un fichier spécifique au commit           |
+| `git commit -m "votre message"`              | Crée un commit avec un message descriptif        |
+| `git push`                                   | Envoie les commits vers GitHub                   |
+| `git pull`                                   | Récupère les dernières modifications de GitHub   |
+
+**Workflow typique** :
+```sh
+git add .
+git commit -m "Description des modifications"
+git push
+```
+
+## �👀 Want to learn more?
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).

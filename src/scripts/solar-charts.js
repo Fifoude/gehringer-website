@@ -138,17 +138,51 @@ function renderProductionChart(hourlyData, astroData) {
         });
     };
 
-    const productionCumul = sorted.map(d => parseFloat(d.produced_kwh) || 0);
-    const forecastCumul = sorted.map(d => parseFloat(d.forecast_hour_cumul_kwh) || 0);
+    // Production is now direct hourly value from n8n
+    const productionRaw = sorted.map(d => parseFloat(d.produced_kwh) || 0);
 
-    // Calculate hourly values
-    const production = decumulate(productionCumul);
+    // Find the last hour with actual production data (> 0)
+    let lastProductionIndex = -1;
+    for (let i = productionRaw.length - 1; i >= 0; i--) {
+        if (productionRaw[i] > 0) {
+            lastProductionIndex = i;
+            break;
+        }
+    }
+
+    // Set production to null after the last real data point
+    const production = productionRaw.map((val, i) => {
+        if (lastProductionIndex === -1) return val; // No data at all, keep zeros
+        if (i > lastProductionIndex) return null; // After last data, return null to stop the line
+        return val;
+    });
+
+    // Forecast remains cumulative, so we need to decumulate it
+    const forecastCumul = sorted.map(d => parseFloat(d.forecast_hour_cumul_kwh) || 0);
     const forecast = decumulate(forecastCumul);
 
     const astroRecord = astroData && astroData.length > 0 ? astroData[0] : null;
     const sunrise = astroRecord ? timeToDecimal(astroRecord.sunrise) : 6;
     const sunset = astroRecord ? timeToDecimal(astroRecord.sunset) : 18;
     const solarNoon = astroRecord ? timeToDecimal(astroRecord.solar_noon) : 12;
+
+    // Calculate totals
+    const totalProduction = production.reduce((sum, val) => sum + val, 0);
+    const totalForecast = forecast.reduce((sum, val) => sum + val, 0);
+
+    // Update stat cards
+    const productionCard = document.getElementById('productionTotal');
+    const forecastCard = document.getElementById('forecastTotal');
+
+    if (productionCard) {
+        const valueEl = productionCard.querySelector('.stat-value');
+        if (valueEl) valueEl.textContent = `${totalProduction.toFixed(2)} kWh`;
+    }
+
+    if (forecastCard) {
+        const valueEl = forecastCard.querySelector('.stat-value');
+        if (valueEl) valueEl.textContent = `${totalForecast.toFixed(2)} kWh`;
+    }
 
     prodChartInstance = new Chart(ctx, {
         type: 'line',
@@ -299,20 +333,67 @@ function renderEnergyChart(hourlyData) {
     }
 
     const sorted = [...hourlyData].sort((a, b) => a.hour - b.hour);
-    const hours = sorted.map(d => d.hour);
 
-    const decumulate = (arr) => {
-        return arr.map((val, i, a) => {
-            if (i === 0) return val;
-            const diff = val - a[i - 1];
-            return diff > -0.1 ? diff : 0;
-        });
-    };
+    // Filter to keep only hours with at least one non-null value
+    const filteredData = sorted.filter(d => {
+        const hasData = (parseFloat(d.produced_kwh) || 0) > 0 ||
+            (parseFloat(d.consumed_kwh) || 0) > 0 ||
+            (parseFloat(d.imported_kwh) || 0) > 0 ||
+            (parseFloat(d.exported_kwh) || 0) > 0;
+        return hasData;
+    });
 
-    const produced = decumulate(sorted.map(d => parseFloat(d.produced_kwh) || 0));
-    const consumed = decumulate(sorted.map(d => parseFloat(d.consumed_kwh) || 0));
-    const imported = decumulate(sorted.map(d => parseFloat(d.imported_kwh) || 0));
-    const exported = decumulate(sorted.map(d => parseFloat(d.exported_kwh) || 0));
+    // If no data at all, show at least the first hour
+    const dataToUse = filteredData.length > 0 ? filteredData : sorted.slice(0, 1);
+
+    const hours = dataToUse.map(d => d.hour);
+
+    // Direct hourly values (no longer cumulative from n8n)
+    const produced = dataToUse.map(d => parseFloat(d.produced_kwh) || 0);
+    const consumed = dataToUse.map(d => parseFloat(d.consumed_kwh) || 0);
+    const imported = dataToUse.map(d => parseFloat(d.imported_kwh) || 0);
+    const exported = dataToUse.map(d => parseFloat(d.exported_kwh) || 0);
+
+    // For the new visualization:
+    // - Production stays positive (top)
+    // - Consumption becomes negative (bottom)
+    // - Net grid = export - import (positive when exporting, negative when importing)
+    const consumedNegative = consumed.map(val => -val);
+    const netGrid = exported.map((exp, i) => exp - imported[i]);
+
+    // Determine X axis max (last hour with data)
+    const maxHour = hours.length > 0 ? Math.max(...hours) : 23;
+
+    // Calculate totals
+    const totalProduction = produced.reduce((sum, val) => sum + val, 0);
+    const totalConsumption = consumed.reduce((sum, val) => sum + val, 0);
+    const totalExported = exported.reduce((sum, val) => sum + val, 0);
+    const totalImported = imported.reduce((sum, val) => sum + val, 0);
+    const totalNetGrid = totalExported - totalImported;
+
+    // Update stat cards
+    const productionCard = document.getElementById('energyProductionTotal');
+    const consumptionCard = document.getElementById('energyConsumptionTotal');
+    const netGridCard = document.getElementById('energyNetGridTotal');
+
+    if (productionCard) {
+        const valueEl = productionCard.querySelector('.stat-value');
+        if (valueEl) valueEl.textContent = `${totalProduction.toFixed(2)} kWh`;
+    }
+
+    if (consumptionCard) {
+        const valueEl = consumptionCard.querySelector('.stat-value');
+        if (valueEl) valueEl.textContent = `${totalConsumption.toFixed(2)} kWh`;
+    }
+
+    if (netGridCard) {
+        const valueEl = netGridCard.querySelector('.stat-value');
+        if (valueEl) {
+            const sign = totalNetGrid >= 0 ? '+' : '';
+            valueEl.textContent = `${sign}${totalNetGrid.toFixed(2)} kWh`;
+        }
+    }
+
 
     energyChartInstance = new Chart(ctx, {
         type: 'line',
@@ -323,43 +404,51 @@ function renderEnergyChart(hourlyData) {
                     label: 'Production',
                     data: produced,
                     borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    borderWidth: 2,
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    borderWidth: 3,
                     fill: true,
                     tension: 0.4,
-                    pointRadius: 3
+                    pointRadius: 4,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
                 },
                 {
                     label: 'Consommation',
-                    data: consumed,
+                    data: consumedNegative,
                     borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#ef4444',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'Flux Réseau',
+                    data: netGrid,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: function (context) {
+                        const chart = context.chart;
+                        const { ctx, chartArea } = chart;
+                        if (!chartArea) return 'rgba(139, 92, 246, 0.1)';
+
+                        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                        gradient.addColorStop(0, 'rgba(239, 68, 68, 0.1)'); // Red at bottom
+                        gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.05)'); // Transparent at middle
+                        gradient.addColorStop(1, 'rgba(16, 185, 129, 0.1)'); // Green at top
+                        return gradient;
+                    },
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4,
-                    pointRadius: 3
-                },
-                {
-                    label: 'Importation',
-                    data: imported,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.4,
-                    pointRadius: 2,
-                    borderDash: [3, 3]
-                },
-                {
-                    label: 'Exportation',
-                    data: exported,
-                    borderColor: '#6b7280',
-                    backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.4,
-                    pointRadius: 2,
-                    borderDash: [3, 3]
+                    pointRadius: 3,
+                    pointBackgroundColor: '#8b5cf6',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1,
+                    // borderDash: [5, 5]
                 }
             ]
         },
@@ -380,22 +469,72 @@ function renderEnergyChart(hourlyData) {
                     padding: 12,
                     callbacks: {
                         label: function (context) {
-                            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} kWh`;
+                            const value = context.parsed.y;
+                            const absValue = Math.abs(value);
+
+                            // For consumption, show positive value with explanation
+                            if (context.datasetIndex === 1) {
+                                return `Consommation: ${absValue.toFixed(2)} kWh`;
+                            }
+
+                            // For net grid, add context
+                            if (context.datasetIndex === 2) {
+                                if (value > 0) {
+                                    return `Solde Réseau: +${value.toFixed(2)} kWh (Export)`;
+                                } else if (value < 0) {
+                                    return `Solde Réseau: ${value.toFixed(2)} kWh (Import)`;
+                                } else {
+                                    return `Solde Réseau: 0.00 kWh (Équilibre)`;
+                                }
+                            }
+
+                            return `${context.dataset.label}: ${value.toFixed(2)} kWh`;
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: {
+                        zeroLine: {
+                            type: 'line',
+                            yMin: 0,
+                            yMax: 0,
+                            borderColor: '#333',
+                            borderWidth: 2,
+                            borderDash: [10, 5]
                         }
                     }
                 }
             },
             scales: {
                 y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'Énergie Horaire (kWh)', font: { size: 13, weight: 'bold' } },
-                    ticks: { color: '#666' },
-                    grid: { color: 'rgba(0,0,0,0.05)' }
+                    title: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#666',
+                        callback: function (value) {
+                            return value.toFixed(1);
+                        }
+                    },
+                    grid: {
+                        color: function (context) {
+                            if (context.tick.value === 0) {
+                                return '#333'; // Bold line at zero
+                            }
+                            return 'rgba(0,0,0,0.05)';
+                        },
+                        lineWidth: function (context) {
+                            if (context.tick.value === 0) {
+                                return 2;
+                            }
+                            return 1;
+                        }
+                    }
                 },
                 x: {
                     type: 'linear',
                     min: 0,
-                    max: 23,
+                    max: maxHour,
                     title: { display: true, text: 'Heure de la journée', font: { size: 13, weight: 'bold' } },
                     ticks: { color: '#666', callback: function (value) { return `${value}h`; }, stepSize: 2 },
                     grid: { color: 'rgba(0,0,0,0.05)' }
@@ -576,14 +715,12 @@ async function loadTab(tabName) {
                 tabsCache.production.hourly = hourly;
                 tabsCache.production.astro = astro;
                 tabsCache.production.loaded = true;
-                showSuccess(`Données chargées: ${hourly.length} enregistrements`);
                 break;
 
             case 'energy':
                 const energyData = await fetchData('hourly', today);
                 tabsCache.energy.hourly = energyData;
                 tabsCache.energy.loaded = true;
-                showSuccess(`Données chargées: ${energyData.length} enregistrements`);
                 break;
 
             case 'balance':
@@ -602,7 +739,6 @@ async function loadTab(tabName) {
                     tabsCache.solar.history = historyData;
                     tabsCache.balance.loaded = true;
                     tabsCache.solar.loaded = true;
-                    showSuccess(`Données chargées: ${historyData.length} enregistrements`);
                 }
                 break;
         }

@@ -2,152 +2,11 @@
 import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import "../styles/solar.css";
 ---
 
 <Layout title="Tableau de Bord Solaire - Production">
     <Header slot="header" />
-
-    <style>
-        .solar-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            color: #667eea;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        h2 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .tab {
-            background: #f8f9fa;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .tab:hover {
-            background: #e8eaff;
-        }
-
-        .tab.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .error {
-            background: #ff4444;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .error.visible {
-            display: block;
-        }
-
-        .success {
-            background: #44aa44;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .success.visible {
-            display: block;
-        }
-
-        .data-section {
-            display: none;
-        }
-
-        .data-section.visible {
-            display: block;
-        }
-
-        .alert {
-            background: #d1ecf1;
-            border: 2px solid #0c5460;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            color: #0c5460;
-        }
-
-        .alert-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 400px;
-            margin-top: 20px;
-        }
-
-        .timestamp {
-            font-size: 12px;
-            color: #999;
-            text-align: right;
-            margin-top: 10px;
-        }
-
-        .tab-empty {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .tab-empty-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #667eea;
-            font-weight: 600;
-        }
-    </style>
 
     <div class="solar-container">
         <div class="card">
@@ -156,9 +15,8 @@ import Footer from "../components/Footer.astro";
             <div class="alert">
                 <div class="alert-title">ℹ️ Information</div>
                 <p>
-                    Les données sont chargées automatiquement au démarrage de la
-                    page. Naviguez entre les onglets pour explorer les
-                    différentes analyses.
+                    Naviguez entre les onglets pour explorer les différentes
+                    analyses.
                 </p>
             </div>
 
@@ -180,7 +38,17 @@ import Footer from "../components/Footer.astro";
             </div>
 
             <div id="productionTab" class="tab-content active">
-                <h2>Production & Prévisions</h2>
+                <h2>Production & Prévisions du jour</h2>
+                <div class="stats-container">
+                    <div id="productionTotal" class="stat-card">
+                        <div class="stat-label">Production Totale</div>
+                        <div class="stat-value">-- kWh</div>
+                    </div>
+                    <div id="forecastTotal" class="stat-card">
+                        <div class="stat-label">Prévision Totale</div>
+                        <div class="stat-value">-- kWh</div>
+                    </div>
+                </div>
                 <div id="chartContainer" class="chart-container">
                     <canvas id="productionChart"></canvas>
                 </div>
@@ -188,8 +56,25 @@ import Footer from "../components/Footer.astro";
             </div>
 
             <div id="energyTab" class="tab-content">
-                <h2>Flux Énergétiques</h2>
-                <div class="chart-container">
+                <h2>Flux Énergétiques du jour</h2>
+                <div class="stats-container">
+                    <div id="energyProductionTotal" class="stat-card">
+                        <div class="stat-label">Production Totale</div>
+                        <div class="stat-value">-- kWh</div>
+                    </div>
+                    <div id="energyConsumptionTotal" class="stat-card">
+                        <div class="stat-label">Consommation Totale</div>
+                        <div class="stat-value">-- kWh</div>
+                    </div>
+                    <div id="energyNetGridTotal" class="stat-card">
+                        <div class="stat-label">Flux Réseau</div>
+                        <div class="stat-value">-- kWh</div>
+                    </div>
+                </div>
+                <div class="chart-container chart-with-y-labels">
+                    <div class="y-axis-label y-axis-top">Production</div>
+                    <div class="y-axis-label y-axis-middle">kWh</div>
+                    <div class="y-axis-label y-axis-bottom">Consommation</div>
                     <canvas id="energyChart"></canvas>
                 </div>
             </div>

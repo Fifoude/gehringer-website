@@ -1,0 +1,351 @@
+/* src/styles/solar.css */
+
+/* =========================================
+   * Layout général du tableau de bord solaire
+   * ========================================= */
+
+
+@layer components {
+    .solar-container {
+        max-width: 72rem;
+        /* ~1152px */
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem;
+
+        /* Variables locales au dashboard */
+        --solar-primary: #667eea;
+        --solar-primary-soft: #e8eaff;
+        --solar-surface: #ffffff;
+        --solar-surface-muted: #f8f9fa;
+        --solar-border-strong: #0c5460;
+        --solar-text-main: #1f2933;
+        --solar-text-muted: #6b7280;
+        --solar-radius-lg: 0.9375rem;
+        --solar-radius-md: 0.5rem;
+        --solar-shadow-elevated: 0 10px 30px rgba(15, 23, 42, 0.12);
+    }
+
+    .card {
+        background: var(--solar-surface);
+        padding: 1.875rem;
+        border-radius: var(--solar-radius-lg);
+        box-shadow: var(--solar-shadow-elevated);
+        margin-bottom: 1.875rem;
+    }
+
+    /* Titres - scoped à cette page par Astro */
+    h1 {
+        color: var(--solar-primary);
+        margin-bottom: 1.25rem;
+        text-align: center;
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+
+    h2 {
+        color: var(--solar-text-main);
+        margin-bottom: 1.25rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    /* ======================
+   * Onglets de navigation
+   * ====================== */
+    .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.625rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .tab {
+        background: var(--solar-surface-muted);
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--solar-radius-md);
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition:
+            background-color 0.2s ease,
+            color 0.2s ease,
+            border-color 0.2s ease,
+            transform 0.1s ease;
+        font-size: 0.9375rem;
+        white-space: nowrap;
+    }
+
+    .tab:hover {
+        background: var(--solar-primary-soft);
+        transform: translateY(-1px);
+    }
+
+    .tab.active {
+        background: var(--solar-primary);
+        color: #ffffff;
+        border-color: var(--solar-primary);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* ======================
+   * Alertes et messages
+   * ====================== */
+
+    /* Base commune aux messages */
+    .alert,
+    .error,
+    .success {
+        border-radius: var(--solar-radius-md);
+        padding: 0.9375rem 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.9375rem;
+        line-height: 1.4;
+    }
+
+    .alert {
+        background: #d1ecf1;
+        border: 2px solid var(--solar-border-strong);
+        color: var(--solar-border-strong);
+    }
+
+    .alert-title {
+        font-weight: 600;
+        margin-bottom: 0.3125rem;
+    }
+
+    .error {
+        background: #f56565;
+        color: #ffffff;
+        display: none;
+    }
+
+    .error.visible {
+        display: block;
+    }
+
+    .success {
+        background: #48bb78;
+        color: #ffffff;
+        display: none;
+    }
+
+    .success.visible {
+        display: block;
+    }
+
+    .data-section {
+        display: none;
+    }
+
+    .data-section.visible {
+        display: block;
+    }
+
+    /* ======================
+   * Compteurs de statistiques
+   * ====================== */
+
+    .stats-container {
+        display: flex;
+        gap: 1rem;
+        margin: 1.25rem 0;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        flex: 1;
+        min-width: 150px;
+        background: linear-gradient(135deg, var(--solar-primary-soft) 0%, #fff 100%);
+        border: 2px solid var(--solar-primary);
+        border-radius: var(--solar-radius-md);
+        padding: 1rem 1.25rem;
+        text-align: center;
+        transition: opacity 0.3s ease, transform 0.2s ease;
+    }
+
+    .stat-card.hidden {
+        opacity: 0.3;
+        transform: scale(0.98);
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--solar-text-muted);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        color: var(--solar-primary);
+        font-weight: 700;
+    }
+
+    /* Couleurs spécifiques pour chaque type de compteur */
+
+    /* Tab 1 - Production & Prévisions */
+    #productionTotal {
+        border-color: #667eea;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, #fff 100%);
+    }
+
+    #productionTotal .stat-value {
+        color: #667eea;
+    }
+
+    #forecastTotal {
+        border-color: #fbbf24;
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, #fff 100%);
+    }
+
+    #forecastTotal .stat-value {
+        color: #fbbf24;
+    }
+
+    /* Tab 2 - Flux Énergétiques */
+    #energyProductionTotal {
+        border-color: #10b981;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, #fff 100%);
+    }
+
+    #energyProductionTotal .stat-value {
+        color: #10b981;
+    }
+
+    #energyConsumptionTotal {
+        border-color: #ef4444;
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, #fff 100%);
+    }
+
+    #energyConsumptionTotal .stat-value {
+        color: #ef4444;
+    }
+
+    #energyNetGridTotal {
+        border-color: #8b5cf6;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, #fff 100%);
+    }
+
+    #energyNetGridTotal .stat-value {
+        color: #8b5cf6;
+    }
+
+    /* ======================
+   * Graphiques & contenu
+   * ====================== */
+
+    .chart-container {
+        position: relative;
+        height: 25rem;
+        /* 400px */
+        margin-top: 1.25rem;
+    }
+
+    /* Labels d'axe Y personnalisés pour le graphique énergétique */
+    .chart-with-y-labels {
+        padding-left: 3rem;
+        /* Espace pour les labels */
+    }
+
+    .y-axis-label {
+        position: absolute;
+        left: 0.5rem;
+        font-size: 13px;
+        font-weight: bold;
+        color: var(--solar-text-muted);
+        transform: rotate(-90deg);
+        transform-origin: center center;
+        white-space: nowrap;
+        width: 1em;
+    }
+
+    .y-axis-top {
+        top: 20%;
+        color: #10b981;
+        /* Vert - Production */
+    }
+
+    .y-axis-middle {
+        top: 50%;
+        color: #666;
+        /* Gris - unité */
+        font-size: 12px;
+    }
+
+    .y-axis-bottom {
+        bottom: 20%;
+        color: #ef4444;
+        /* Rouge - Consommation */
+    }
+
+    .timestamp {
+        margin-top: 0.625rem;
+        font-size: 0.75rem;
+        color: var(--solar-text-muted);
+        text-align: right;
+    }
+
+    .tab-empty {
+        text-align: center;
+        padding: 3.75rem 1.25rem;
+        color: var(--solar-text-muted);
+        background: var(--solar-surface-muted);
+        border-radius: var(--solar-radius-lg);
+    }
+
+    .tab-empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 1.25rem;
+        color: var(--solar-primary);
+        font-weight: 600;
+    }
+
+    /* Responsive léger pour les petits écrans */
+
+    @media (max-width: 640px) {
+        .card {
+            padding: 1.25rem;
+        }
+
+        .chart-container {
+            height: 18rem;
+        }
+
+        .tabs {
+            gap: 0.5rem;
+        }
+
+        .tab {
+            flex: 1 1 auto;
+            text-align: center;
+            white-space: normal;
+        }
+
+        .stats-container {
+            flex-direction: column;
+        }
+
+        .stat-card {
+            min-width: 100%;
+        }
+
+        .chart-with-y-labels {
+            padding-left: 2.5rem;
+        }
+
+        .y-axis-label {
+            font-size: 11px;
+        }
+    }
+}

@@ -27,3 +27,6 @@ pnpm-debug.log*
 .netlify
 # Temporary upload files
 .tmp.driveupload/
+
+# n8n workflows (may contain hardcoded secrets)
+n8n/

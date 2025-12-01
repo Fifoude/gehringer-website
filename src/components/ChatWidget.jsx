@@ -12,7 +12,7 @@ function cn(...inputs) {
 }
 
 // Environment variables
-const N8N_URL = import.meta.env.PUBLIC_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com';
+const N8N_URL = import.meta.env.PUBLIC_N8N_WEBHOOK_URL || 'https://n8n.gehringer.fr';
 const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAAFetvs7aO1ZlD6M'; // Key from screenshot
 
 export default function ChatWidget() {

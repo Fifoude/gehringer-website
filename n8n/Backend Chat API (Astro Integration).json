@@ -1,0 +1,669 @@
+{
+  "name": "Backend Chat API (Astro Integration)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat-api",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e756ff35-c693-4dc2-93a6-010ff9a4f2da",
+      "name": "Webhook (Entrée Unique)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -32
+      ],
+      "webhookId": "d41783e1-c8f6-4aba-bd51-5016acb5582a"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.action }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "auth-init"
+            },
+            {
+              "value2": "auth-verify",
+              "output": 1
+            },
+            {
+              "value2": "chat-message",
+              "output": 2
+            }
+          ]
+        }
+      },
+      "id": "fee65d6d-f6e3-4f8f-88d5-e7d419980fd4",
+      "name": "Router (Switch Action)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        176,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Génère un code à 4 chiffres\nconst code = Math.floor(1000 + Math.random() * 9000);\n\n// Récupération sécurisée de l'email depuis le nœud Webhook\n// On utilise try/catch ou une vérification pour éviter le crash si l'email est manquant\nconst body = $('Webhook (Entrée Unique)').first().json.body;\nconst email = body ? body.email : 'no-email-found';\n\nreturn {\n  email: email,\n  generated_code: code\n};"
+      },
+      "id": "cdc44b28-63ce-455f-879f-b87aec20abed",
+      "name": "Générer Code OTP",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 1. Récupération du code reçu par le Webhook\nconst webhook = $('Webhook (Entrée Unique)').first().json;\nconst email = webhook.body.email;\nconst receivedCode = webhook.body.code;\n\n// 2. Récupération du code stocké passé depuis Get row(s)\n// Ici, $json EST déjà la ligne: { email, code, id, ... }\nconst storedCode = $json.code;\n\nif (!storedCode) {\n  throw new Error(\"Aucun OTP trouvé pour cet email.\");\n}\n\n// 3. Comparaison\nif (receivedCode !== storedCode) {\n  throw new Error(\"Code OTP invalide.\");\n}\n\n// 4. Succès\nreturn {\n  email,\n  valid: true,\n};\n"
+      },
+      "id": "60584d11-c263-4dcc-860d-09958ed1375b",
+      "name": "Vérifier Code (Mock)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "claims": {
+          "expiresIn": 86400
+        },
+        "options": {}
+      },
+      "id": "3f6840b1-dc8a-4e02-acbd-474e7c843ea1",
+      "name": "Générer JWT Token",
+      "type": "n8n-nodes-base.jwt",
+      "typeVersion": 1,
+      "position": [
+        928,
+        -48
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "jwtAuth": {
+          "id": "MSrsIWMcCZiwYCvf",
+          "name": "JWT Auth account"
+        }
+      },
+      "notes": "Valable 24h"
+    },
+    {
+      "parameters": {
+        "claims": {},
+        "options": {}
+      },
+      "id": "5ae7b122-cde8-4aed-a21b-781a3698c30d",
+      "name": "Sécurité (Vérifier JWT)",
+      "type": "n8n-nodes-base.jwt",
+      "typeVersion": 1,
+      "position": [
+        544,
+        208
+      ],
+      "credentials": {
+        "jwtAuth": {
+          "id": "MSrsIWMcCZiwYCvf",
+          "name": "JWT Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $binary.audio ? true : false }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "09aac4ed-35f9-496f-90c4-5e1f1dd65c4d",
+      "name": "Audio présent ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        720,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "07ac93d7-ff55-41f6-8839-4cb22cd6df8c",
+      "name": "Whisper (STT)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        944,
+        112
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "pe1RxUmCYaJzcwAP",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4.1-mini",
+        "prompt": {
+          "messages": [
+            {
+              "content": "={{ $json.text || $('Webhook (Entrée Unique)').item.json.body.text }}"
+            }
+          ]
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "075188d7-e29f-48bb-b3f5-10f8293536fe",
+      "name": "Cerveau IA (LLM)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        224
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "pe1RxUmCYaJzcwAP",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d2bd0f4c-69f1-4023-9fb3-8edcfd9ca097",
+      "name": "Réponse Init",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "0d20a9c0-7876-4108-bac7-e6a7d5f68f8c",
+      "name": "Réponse Token",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c668be05-0801-48d5-9e4b-9fac52d9cde8",
+      "name": "Réponse Chat",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  response: $json.message.content\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        224
+      ],
+      "id": "2873e78f-c826-4187-83e0-ea523f2b0c70",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "fromEmail": "contact@gehringer.fr",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Your code",
+        "html": "=Bonjour,\n\nvoici le code pour chatter: {{ $json.code.toString() }}\n\nEn continuant, vous acceptez que votre email soit utilisé pour traiter votre demande.\n\nMerci !",
+        "options": {
+          "bccEmail": "philippe.lakas@gmail.com",
+          "replyTo": "web.contact@gehringer.fr"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1536,
+        -240
+      ],
+      "id": "61b6c0f2-7885-4d80-9d9e-70264c4525c9",
+      "name": "Send email",
+      "webhookId": "25e76513-a504-43d5-9a46-87dc60e1b24a",
+      "credentials": {
+        "smtp": {
+          "id": "IpKC6W2ftYil9cca",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "9tsygI8ZLiNOkxxH",
+          "mode": "list",
+          "cachedResultName": "CRM_Contacts",
+          "cachedResultUrl": "/projects/HmXlcweiu5I7NsBE/datatables/9tsygI8ZLiNOkxxH"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.body.email }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        544,
+        -240
+      ],
+      "id": "cd98b2d2-6417-486f-8fd5-918c56bf3b9a",
+      "name": "Get CRM Contact",
+      "notes": "Est-ce que l'email existe ?"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "uiyo3wYFAMTjdxne",
+          "mode": "list",
+          "cachedResultName": "OTP_Codes",
+          "cachedResultUrl": "/projects/HmXlcweiu5I7NsBE/datatables/uiyo3wYFAMTjdxne"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.email }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "code": "={{ $json.generated_code }}",
+            "email": "={{ $json.email }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "code",
+              "displayName": "code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        -240
+      ],
+      "id": "a3417ea8-2a07-4a4f-aaaa-b1c9daf64528",
+      "name": "Sécu: Stocker Code"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "9tsygI8ZLiNOkxxH",
+          "mode": "list",
+          "cachedResultName": "CRM_Contacts",
+          "cachedResultUrl": "/projects/HmXlcweiu5I7NsBE/datatables/9tsygI8ZLiNOkxxH"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.email }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "interaction_count": "={{ (Number($('Get CRM Contact').first().json.interaction_count) || 0) + 1 }}",
+            "last_seen": "={{ new Date().toISOString() }}",
+            "email": "={{ $json.email }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "interaction_count",
+              "displayName": "interaction_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "last_seen",
+              "displayName": "last_seen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -240
+      ],
+      "id": "123ef824-7365-412c-8b48-7600d89040d5",
+      "name": "Update CRM",
+      "notes": "Màj de CRM"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "uiyo3wYFAMTjdxne",
+          "mode": "list",
+          "cachedResultName": "OTP_Codes",
+          "cachedResultUrl": "/projects/HmXlcweiu5I7NsBE/datatables/uiyo3wYFAMTjdxne"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.body.email }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        544,
+        -48
+      ],
+      "id": "5a462812-f5dd-4105-9291-dce880dcc67d",
+      "name": "Get stored OTP code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (Entrée Unique)": {
+      "main": [
+        [
+          {
+            "node": "Router (Switch Action)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router (Switch Action)": {
+      "main": [
+        [
+          {
+            "node": "Get CRM Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get stored OTP code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sécurité (Vérifier JWT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Générer Code OTP": {
+      "main": [
+        [
+          {
+            "node": "Sécu: Stocker Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vérifier Code (Mock)": {
+      "main": [
+        [
+          {
+            "node": "Générer JWT Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Générer JWT Token": {
+      "main": [
+        [
+          {
+            "node": "Réponse Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sécurité (Vérifier JWT)": {
+      "main": [
+        [
+          {
+            "node": "Audio présent ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio présent ?": {
+      "main": [
+        [
+          {
+            "node": "Whisper (STT)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cerveau IA (LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Whisper (STT)": {
+      "main": [
+        [
+          {
+            "node": "Cerveau IA (LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cerveau IA (LLM)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Réponse Init": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Réponse Chat": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Réponse Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get CRM Contact": {
+      "main": [
+        [
+          {
+            "node": "Update CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sécu: Stocker Code": {
+      "main": [
+        [
+          {
+            "node": "Réponse Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update CRM": {
+      "main": [
+        [
+          {
+            "node": "Générer Code OTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get stored OTP code": {
+      "main": [
+        [
+          {
+            "node": "Vérifier Code (Mock)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "69cbc3b2-56c4-4186-af6a-f9020d43f2b9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"
+  },
+  "id": "zIfw0LmnmF2pox7Z",
+  "tags": []
+}

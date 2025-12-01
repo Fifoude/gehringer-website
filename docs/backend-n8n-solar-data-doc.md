@@ -6,7 +6,7 @@
 - À utiliser pour :
   - comprendre les champs disponibles (`energy_hourly`, `solar_data`, historique Sheets)
   - savoir quelles métriques afficher (autosuffisance, autoconsommation, etc.)
-  - construire des requêtes d’API ou SQL-like.
+  - construire des requêtes d’API (via Webhooks n8n recommandés).
 - Ne jamais inventer de colonnes : utiliser uniquement celles décrites ici.
 
 
@@ -247,7 +247,36 @@ ORDER BY Mois DESC
 
 ## 🔌 Accès aux Données
 
-### Option 1: API n8n Data Tables (Recommandé pour temps réel)
+### Option 1: API Webhooks n8n (Nouveau & Recommandé)
+
+#### Configuration
+- **Base URL**: `https://n8n.gehringer.fr/webhook`
+- **Authentification**: Aucune (Webhooks publics)
+- **Méthode**: GET
+
+#### Endpoints Disponibles
+1. **Données Solaires (Temps Réel)**
+   - **URL**: `/solar-data`
+   - **Paramètres**: `?date=YYYY-MM-DD` (optionnel, défaut = aujourd'hui)
+   - **Retour**: JSON (lignes de `energy_hourly`)
+
+2. **Données Astronomiques**
+   - **URL**: `/astro-data`
+   - **Paramètres**: `?date=YYYY-MM-DD` (optionnel)
+   - **Retour**: JSON (lignes de `solar_data`)
+
+3. **Historique Complet**
+   - **URL**: `/solar-history`
+   - **Retour**: JSON (contenu du Google Sheet)
+
+#### Avantages
+- ✅ Accès direct et rapide
+- ✅ Pas de clé API complexe à gérer côté client
+- ✅ Format JSON standardisé
+
+---
+
+### Option 2: API n8n Data Tables (Accès bas niveau)
 
 #### Configuration
 - **Base URL**: `https://n8n.gehringer.fr`
@@ -277,7 +306,7 @@ GET /api/v1/datatables/r7fhudUyDIqwqXUC/rows
 
 ---
 
-### Option 2: Google Sheets API (Pour historique long terme)
+### Option 3: Google Sheets API (Pour historique long terme)
 
 #### Configuration
 - **Spreadsheet ID**: `1MHFGECBWHFgl0VNcXwIdnTyx9-OoWmHrHdglP7LurJ0`
@@ -307,7 +336,7 @@ gapi.client.sheets.spreadsheets.values.get({
 
 ---
 
-### Option 3: Export CSV via Netlify Functions (Recommandé pour pages statiques)
+### Option 4: Export CSV via Netlify Functions (Recommandé pour pages statiques)
 
 Créer une Netlify Function qui interroge n8n et retourne du JSON/CSV pour le frontend.
 
@@ -534,9 +563,23 @@ function durationToMinutes(duration) {
   - Base URL: `https://api.sunrise-sunset.org`
 
 ### Workflows n8n
+
+#### Workflows Principaux (Orchestrateurs)
 - **Workflow A**: Historique Quotidien (ID: `9V02WzToapyCQzhz`)
 - **Workflow B**: Données Temps Réel (ID: `fbNRoWx41rt2EdOW`)
 - **Workflow C**: Données astronomique (ID: `J1o613yJmGZxSSzR`)
+
+#### Sub-Workflows (Modules de données)
+- **[SUB] APsystems - Données Horaires**: Récupération production jour J
+- **[SUB] APsystems - Données Quotidiennes**: Récupération historique J-1
+- **[SUB] Forecast.Solar - Prévision Heure**: Prévisions horaires
+- **[SUB] Forecast.Solar - Prévision Jour**: Prévision journalière
+- **[SUB] Sunrise-Sunset - Données Solaires**: Données astronomiques
+
+#### API Workflows (Webhooks)
+- **API Solar** (ID: `j0u1aEGtWlvhPuwf`): Endpoint `solar-data`
+- **API Astro** (ID: `6IIswAnmueTOgoTb`): Endpoint `astro-data`
+- **API History** (ID: `0Lvs0DixSnBVXCmp`): Endpoint `solar-history`
 
 ---
 
@@ -548,6 +591,7 @@ function durationToMinutes(duration) {
 | 2025-11-20 | 1.1 | Ajout correction problème purge Data Tables |
 | 2025-11-20 | 1.2 | Ajout correction timezone CRON Workflow A |
 | 2025-11-21 | 1.3 | Restructuration avec ajouts Workflow C |
+| 2025-11-29 | 1.4 | Ajout des APIs Webhooks et modularisation (SUB workflows) |
 
 ---
 
@@ -562,5 +606,5 @@ Pour questions sur les données ou accès aux APIs:
 ---
 
 **Document généré pour**: Exploitation par IA/développeurs
-**Dernière mise à jour**: 21 novembre 2025
-**Version**: 1.3
+**Dernière mise à jour**: 29 novembre 2025
+**Version**: 1.4

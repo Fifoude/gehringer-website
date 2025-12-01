@@ -1,6 +1,7 @@
 ---
-import '../styles/global.css';
-import { defaultSEO } from '../config/seo';
+import "../styles/global.css";
+import { defaultSEO } from "../config/seo";
+import ChatWidget from "../components/ChatWidget.jsx";
 
 const {
   title = defaultSEO.title,
@@ -19,7 +20,7 @@ const {
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="author" content={author} />
-    
+
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -27,16 +28,19 @@ const {
     <meta property="og:site_name" content={siteName} />
     <meta property="og:url" content={`${siteUrl}${Astro.url.pathname}`} />
     <meta property="og:image" content={image} />
-    
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={image} />
-    
+
     <!-- Favicon & Fonts -->
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap"
+      rel="stylesheet"
+    />
   </head>
 
   <body class="antialiased text-gray-900 bg-white">
@@ -45,5 +49,6 @@ const {
       <slot />
     </main>
     <slot name="footer" />
+    <ChatWidget client:load />
   </body>
 </html>

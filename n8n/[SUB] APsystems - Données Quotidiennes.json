@@ -1,0 +1,165 @@
+{
+  "name": "[SUB] APsystems - Données Quotidiennes",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "uuid-trigger",
+      "name": "Appel depuis workflow parent",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        240,
+        304
+      ],
+      "typeVersion": 1,
+      "notes": "🔔 Trigger SUB-workflow\nAppelé par: Workflow A (J-1) ou Workflow B (aujourd'hui)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Configuration centralisée\nconst SOLAR_CONFIG = {\n  latitude: 48.8782753,\n  longitude: 2.2268011,\n  declination: 5,\n  azimuth: 44,\n  power: 3.36,\n  timezone: 'Europe/Paris',\n  location: 'Suresnes, France'\n};\n\n// Variables d'environnement APsystems\n/**\nconst appId = $env.APSYSTEMS_APP_ID;\nconst appSecret = $env.APSYSTEMS_APP_SECRET;\nconst systemId = $env.APSYSTEMS_SYSTEM_ID;\n**/\nconst appId = '2c9f95c7951d4ca201952a4c0f88026f';\nconst appSecret = '2a4c0f87026e';\nconst systemId = 'D19H831159936795';\n\nconst ecuPV = '215000046433';\n\nif (!appId || !appSecret || !systemId) {\n  throw new Error('Variables d\\'environnement manquantes: APSYSTEMS_APP_ID, APSYSTEMS_APP_SECRET, APSYSTEMS_SYSTEM_ID');\n}\n\n// Récupérer la date demandée (si fournie par le parent, sinon aujourd'hui)\nconst inputDate = $input.first().json.date || new Date().toISOString().split('T')[0];\n\nreturn [{\n  json: {\n    solarConfig: SOLAR_CONFIG,\n    apsConfig: {\n      appId,\n      appSecret,\n      systemId,\n      ecuPV\n    },\n    requestedDate: inputDate\n  }\n}];"
+      },
+      "id": "uuid-config",
+      "name": "Configuration",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        464,
+        304
+      ],
+      "typeVersion": 2,
+      "notes": "⚙️ Config: Coordonnées solaires + API APsystems\n📅 Récupère date demandée depuis parent (ou aujourd'hui par défaut)\n⚠️ TODO: Migrer appId/appSecret vers variables env"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nfunction generateUUID() {\n  return 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'.replace(/x/g, () => \n    (Math.random() * 16 | 0).toString(16)\n  );\n}\n\nfunction calculateSignature(appSecret, method, path, timestamp, nonce, appId, algorithm = 'HmacSHA256') {\n  const stringToSign = `${timestamp}/${nonce}/${appId}/${path}/${method}/${algorithm}`;\n  const hmac = crypto.createHmac(\n    algorithm === 'HmacSHA256' ? 'sha256' : 'sha1',\n    appSecret\n  );\n  hmac.update(stringToSign);\n  return hmac.digest('base64');\n}\n\nconst config = $input.first().json;\nconst { appId, appSecret, systemId, ecuPV } = config.apsConfig;\nconst requestedDate = config.requestedDate;\n\n// Extraire l'année et le mois pour la requête\nconst [year, month] = requestedDate.split('-');\n\nconst timestamp = Date.now().toString();\nconst nonce = generateUUID();\nconst path = ecuPV;\nconst signature = calculateSignature(appSecret, 'GET', path, timestamp, nonce, appId, 'HmacSHA256');\n\n// Construire l'URL avec les paramètres de période\nconst baseUrl = `https://api.apsystemsema.com:9282/user/api/v2/systems/${systemId}/devices/meter/period/${ecuPV}`;\nconst queryParams = `?energy_level=daily&date_range=${year}-${month}`;\n\nreturn [{\n  json: {\n    ...config,\n    url: baseUrl + queryParams,\n    headers: {\n      'X-CA-AppId': appId,\n      'X-CA-Timestamp': timestamp,\n      'X-CA-Nonce': nonce,\n      'X-CA-Signature-Method': 'HmacSHA256',\n      'X-CA-Signature': signature\n    }\n  }\n}];"
+      },
+      "id": "uuid-signature",
+      "name": "Génération Signature API",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        688,
+        304
+      ],
+      "typeVersion": 2,
+      "notes": "🔐 Génère signature HMAC-SHA256 APsystems\n🐛 Requête API: /devices/meter/period (toutes données du mois)\n⚠️ API retourne TOUT le mois, code filtre ensuite le jour"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-CA-AppId",
+              "value": "={{ $json.headers['X-CA-AppId'] }}"
+            },
+            {
+              "name": "X-CA-Timestamp",
+              "value": "={{ $json.headers['X-CA-Timestamp'] }}"
+            },
+            {
+              "name": "X-CA-Nonce",
+              "value": "={{ $json.headers['X-CA-Nonce'] }}"
+            },
+            {
+              "name": "X-CA-Signature-Method",
+              "value": "={{ $json.headers['X-CA-Signature-Method'] }}"
+            },
+            {
+              "name": "X-CA-Signature",
+              "value": "={{ $json.headers['X-CA-Signature'] }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "uuid-http",
+      "name": "Requête APsystems",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        912,
+        304
+      ],
+      "typeVersion": 4.2,
+      "notes": "🌐 Requête HTTP vers API APsystems\nTimeout: 10s | Récupère produced/consumed/imported/exported"
+    },
+    {
+      "parameters": {
+        "jsCode": "const pvData = $input.first().json;\nconst config = $('Configuration').item.json;\nconst requestedDate = config.requestedDate;\n\nif (pvData.code !== 0) {\n  throw new Error(`Erreur API APsystems (code ${pvData.code}): ${pvData.msg || 'Erreur inconnue'}`);\n}\n\nconst data = pvData.data || {};\n\nfunction formatNumber(value) {\n  return typeof value === 'string' ? parseFloat(value) : value;\n}\n\n// L'API retourne les données par jour dans un tableau time[] et des tableaux produced[], consumed[], etc.\nconst timeArray = data.time || [];\nconst producedArray = data.produced || [];\nconst consumedArray = data.consumed || [];\nconst importedArray = data.imported || [];\nconst exportedArray = data.exported || [];\n\n// Trouver l'index du jour demandé\nconst dayOfMonth = parseInt(requestedDate.split('-')[2]);\nconst dayIndex = timeArray.indexOf(dayOfMonth.toString().padStart(2, '0'));\n\nif (dayIndex === -1) {\n  throw new Error(`Données non trouvées pour le ${requestedDate}`);\n}\n\n// Extraire les valeurs du jour demandé\nconst produced = formatNumber(producedArray[dayIndex] || 0);\nconst consumed = formatNumber(consumedArray[dayIndex] || 0);\nconst imported = formatNumber(importedArray[dayIndex] || 0);\nconst exported = formatNumber(exportedArray[dayIndex] || 0);\n\n// Convertir en timezone Europe/Paris\nconst timestamp = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Paris' }).replace(' ', 'T');\n\nconst result = {\n  timestamp: timestamp,\n  date: requestedDate,\n  systemId: config.apsConfig.systemId,\n  ecuPV: config.apsConfig.ecuPV,\n  \n  today: {\n    produced: produced,\n    consumed: consumed,\n    imported: imported,\n    exported: exported\n  },\n  \n  metadata: {\n    apiResponseCode: pvData.code,\n    timezone: config.solarConfig.timezone,\n    dayIndex: dayIndex\n  }\n};\n\n// Calculs d'autoconsommation\nresult.today.autoconsumed = result.today.produced - result.today.exported;\nresult.today.autosufficiency = result.today.consumed > 0 \n  ? parseFloat(((result.today.autoconsumed / result.today.consumed) * 100).toFixed(2))\n  : 0;\nresult.today.autoconsumption = result.today.produced > 0 \n  ? parseFloat(((result.today.autoconsumed / result.today.produced) * 100).toFixed(2))\n  : 0;\n\nreturn [{ json: result }];"
+      },
+      "id": "uuid-format",
+      "name": "Formatage Données",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1120,
+        304
+      ],
+      "typeVersion": 2,
+      "notes": "📦 Formatage données APsystems:\n1. Vérifie code API = 0 (succès)\n2. Cherche jour demandé dans tableau time[]\n3. Extrait valeurs du jour\n4. Calcule autoconso/autosuffisance\n✅ Retourne données cumulées depuis minuit"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Appel depuis workflow parent": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuration": {
+      "main": [
+        [
+          {
+            "node": "Génération Signature API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Génération Signature API": {
+      "main": [
+        [
+          {
+            "node": "Requête APsystems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Requête APsystems": {
+      "main": [
+        [
+          {
+            "node": "Formatage Données",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timezone": "Europe/Paris"
+  },
+  "versionId": "c184329d-48b7-4495-b69c-6c4ab40ad423",
+  "meta": {
+    "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"
+  },
+  "id": "u2Dc3JzuRlYinZZr",
+  "tags": []
+}

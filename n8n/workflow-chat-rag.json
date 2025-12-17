@@ -1,0 +1,181 @@
+{
+    "name": "Chatbot IA RAG - Gehringer.fr v2",
+    "nodes": [
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                0,
+                0
+            ],
+            "id": "chat-trigger",
+            "name": "Chat Trigger",
+            "webhookId": "chat-rag-webhook"
+        },
+        {
+            "parameters": {
+                "options": {
+                    "systemMessage": "Tu es l'IA Assistant de Philippe Gehringer. \n\nTa mission est de répondre aux questions des visiteurs en te basant STRICTEMENT sur les expériences professionnelles de Philippe stockées dans ta mémoire.\n\nRÈGLES :\n1. Présente-toi comme 'Je suis l'IA de Philippe'.\n2. Ton professionnel et direct.\n3. Si tu ne trouves pas l'info, dis-le."
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.7,
+            "position": [
+                220,
+                0
+            ],
+            "id": "ai-agent",
+            "name": "AI Agent (RAG)"
+        },
+        {
+            "parameters": {
+                "model": "llama3:latest",
+                "options": {
+                    "temperature": 0.3
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+            "typeVersion": 1,
+            "position": [
+                180,
+                280
+            ],
+            "id": "ollama-chat",
+            "name": "Ollama Chat Model"
+        },
+        {
+            "parameters": {
+                "name": "experience_pro_db",
+                "description": "Utilise cet outil pour rechercher les expériences de Philippe.",
+                "topK": 4
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+            "typeVersion": 1,
+            "position": [
+                460,
+                240
+            ],
+            "id": "vector-tool",
+            "name": "Mémoire Expériences (Qdrant)"
+        },
+        {
+            "parameters": {
+                "qdrantCollection": {
+                    "__rl": true,
+                    "value": "experience_pro",
+                    "mode": "list",
+                    "cachedResultName": "experience_pro"
+                },
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+            "typeVersion": 1,
+            "position": [
+                600,
+                420
+            ],
+            "id": "qdrant-store",
+            "name": "Qdrant Vector Store"
+        },
+        {
+            "parameters": {
+                "model": "embeddinggemma:latest"
+            },
+            "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+            "typeVersion": 1,
+            "position": [
+                600,
+                600
+            ],
+            "id": "ollama-embeddings",
+            "name": "Embeddings Ollama"
+        },
+        {
+            "parameters": {},
+            "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+            "typeVersion": 1.2,
+            "position": [
+                340,
+                420
+            ],
+            "id": "memory",
+            "name": "Conversation Memory"
+        }
+    ],
+    "connections": {
+        "Chat Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "AI Agent (RAG)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Ollama Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "AI Agent (RAG)",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    },
+                    {
+                        "node": "Mémoire Expériences (Qdrant)",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mémoire Expériences (Qdrant)": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "AI Agent (RAG)",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Qdrant Vector Store": {
+            "ai_vectorStore": [
+                [
+                    {
+                        "node": "Mémoire Expériences (Qdrant)",
+                        "type": "ai_vectorStore",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Embeddings Ollama": {
+            "ai_embedding": [
+                [
+                    {
+                        "node": "Qdrant Vector Store",
+                        "type": "ai_embedding",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Conversation Memory": {
+            "ai_memory": [
+                [
+                    {
+                        "node": "AI Agent (RAG)",
+                        "type": "ai_memory",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

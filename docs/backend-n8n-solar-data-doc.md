@@ -12,7 +12,12 @@
 
 ## 🎯 Objectif de ce document
 
-Ce document décrit les sources de données disponibles pour construire des visualisations (courbes, graphiques) de production et consommation solaire. Il est destiné aux IA/développeurs qui doivent créer des pages web d'analyse des données photovoltaïques.
+Ce document décrit les sources de données disponibles pour :
+1. **Le Dashboard Solaire** : Visualisations (courbes, graphiques) de production et consommation.
+2. **Le Chatbot IA** : Connaissance contextuelle, gestion des utilisateurs et sécurité.
+
+Il est destiné aux IA/développeurs qui doivent maintenir le système ou créer de nouvelles fonctionnalités.
+> 🔗 **Pour une vision d'ensemble du projet, de l'architecture complète (incluant l'IA) et de la roadmap, consultez le document maître :** [`architecture-and-roadmap.md`](architecture-and-roadmap.md).
 
 ---
 
@@ -160,7 +165,73 @@ ORDER BY date
 
 ---
 
-### 3️⃣ Google Sheets: "APsystems - Historique Quotidien"
+### 3️⃣ Data Table: `CRM_Contacts`
+**Fichier source**: `n8n/CRM_Contacts.csv`
+
+#### 📝 Description
+Table de gestion de la relation utilisateur pour le chatbot IA. Elle permet de suivre les interactions et de personnaliser l'expérience.
+> Cette table est une composante du système complet (RAG/Ollama/Qdrant) décrit dans [`architecture-and-roadmap.md`](architecture-and-roadmap.md).
+
+#### 🔄 Mise à jour
+- **Workflow**: Backend Chat API (Astro Integration)
+- **Fréquence**: À chaque interaction utilisateur
+- **Rétention**: Illimitée
+
+#### 🔐 Authentification & Sécurité (Nouveau v1.6)
+Le système utilise un **token JWT enrichi** généré après validation OTP.
+- **Structure du Token** :
+  ```json
+  {
+    "email": "user@example.com",       // Identifiant vérifié
+    "user_labels": ["Rugby", "VIP"],   // Groupes Google Contacts résolus
+    "expiresIn": 86400                 // 24h
+  }
+  ```
+- **Résolution des groupes** : Le workflow interroge directement l'API Google People (`people:searchContacts`) et fusionne les IDs de groupes avec leurs noms lisibles pour donner du contexte à l'IA.
+
+#### 🔀 Routage de Contenu (Nouveau v1.6)
+Le workflow détecte automatiquement le type de message entrant via une logique ternaire robuste :
+1. **Audio** (`mimeType: audio/*`) → Transcrit via Whisper (STT) avant envoi à l'IA.
+2. **Document** (PDF, Docx, etc.) → Routé vers le processeur de fichiers (RAG ingestion).
+3. **Texte** → Traitement direct par l'Agent IA.
+
+#### 📊 Structure de la table
+
+| Colonne | Type | Description | Exemple |
+|---------|------|-------------|---------|
+| `id` | Number | Identifiant unique interne | `1` |
+| `email` | String | Email de l'utilisateur (clé primaire fonctionnelle) | `user@example.com` |
+| `interaction_count` | Number | Nombre total de messages échangés | `42` |
+| `last_seen` | DateTime | Horodatage de la dernière interaction | `2025-12-04T18:23:25.805Z` |
+| `createdAt` | DateTime | Date de création du profil | `2025-12-01T10:00:00.000Z` |
+| `updatedAt` | DateTime | Dernière modification de la ligne | `2025-12-04T18:23:25.824Z` |
+
+---
+
+### 4️⃣ Data Table: `OTP_Codes`
+**Fichier source**: `n8n/OTP_Codes.csv`
+
+#### 📝 Description
+Table temporaire de sécurité pour l'authentification par email (One-Time Password).
+
+#### 🔄 Mise à jour
+- **Workflow**: Backend Chat API (Astro Integration)
+- **Fréquence**: À la demande d'authentification
+- **Rétention**: Temporaire (codes à usage unique/expirables)
+
+#### 📊 Structure de la table
+
+| Colonne | Type | Description | Exemple |
+|---------|------|-------------|---------|
+| `id` | Number | Identifiant unique | `1` |
+| `email` | String | Email destinataire du code | `user@example.com` |
+| `code` | String/Number | Code OTP généré (généralement 4 chiffres) | `9752` |
+| `createdAt` | DateTime | Heure de génération (utile pour l'expiration) | `2025-12-04T18:10:51.245Z` |
+| `updatedAt` | DateTime | Dernière mise à jour | `2025-12-04T18:23:25.868Z` |
+
+---
+
+### 5️⃣ Google Sheets: "APsystems - Historique Quotidien"
 **ID Google Sheets**: `1MHFGECBWHFgl0VNcXwIdnTyx9-OoWmHrHdglP7LurJ0`  
 **Feuille**: `Feuille 1` (gid=0)
 
@@ -567,7 +638,8 @@ function durationToMinutes(duration) {
 #### Workflows Principaux (Orchestrateurs)
 - **Workflow A**: Historique Quotidien (ID: `9V02WzToapyCQzhz`)
 - **Workflow B**: Données Temps Réel (ID: `fbNRoWx41rt2EdOW`)
-- **Workflow C**: Données astronomique (ID: `J1o613yJmGZxSSzR`)
+- **Workflow C**: Données astronomiques (ID: `J1o613yJmGZxSSzR`)
+- **Backend Chat API**: Astro Integration (ID: `eBBXkB0vqJOsW6g8`)
 
 #### Sub-Workflows (Modules de données)
 - **[SUB] APsystems - Données Horaires**: Récupération production jour J
@@ -580,6 +652,7 @@ function durationToMinutes(duration) {
 - **API Solar** (ID: `j0u1aEGtWlvhPuwf`): Endpoint `solar-data`
 - **API Astro** (ID: `6IIswAnmueTOgoTb`): Endpoint `astro-data`
 - **API History** (ID: `0Lvs0DixSnBVXCmp`): Endpoint `solar-history`
+- **Backend Chat API** (ID: `eBBXkB0vqJOsW6g8`): Endpoint principal du chat (Websocket/HTTP)
 
 ---
 
@@ -592,6 +665,8 @@ function durationToMinutes(duration) {
 | 2025-11-20 | 1.2 | Ajout correction timezone CRON Workflow A |
 | 2025-11-21 | 1.3 | Restructuration avec ajouts Workflow C |
 | 2025-11-29 | 1.4 | Ajout des APIs Webhooks et modularisation (SUB workflows) |
+| 2025-12-05 | 1.5 | Ajout des tables CRM/OTP et du workflow Chat API |
+| 2025-12-14 | 1.6 | Raffinement Chat API : routage de contenu avancé, résolution des groupes Google Contacts via API HTTP, enrichment du Token JWT |
 
 ---
 
@@ -606,5 +681,5 @@ Pour questions sur les données ou accès aux APIs:
 ---
 
 **Document généré pour**: Exploitation par IA/développeurs
-**Dernière mise à jour**: 29 novembre 2025
-**Version**: 1.4
+**Dernière mise à jour**: 14 décembre 2025
+**Version**: 1.6

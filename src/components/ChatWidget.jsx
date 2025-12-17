@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Mic, Paperclip, Loader2, File as FileIcon, StopCircle, CheckCircle } from 'lucide-react';
+import { MessageCircle, X, Send, Mic, Paperclip, Loader2, File as FileIcon, StopCircle, Sparkles, Calendar, FileText, ListTodo, Globe, ArrowUp } from 'lucide-react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { Toaster, toast } from 'sonner';
 import axios from 'axios';
@@ -15,11 +15,11 @@ function cn(...inputs) {
 const N8N_URL = import.meta.env.PUBLIC_N8N_WEBHOOK_URL || 'https://n8n.gehringer.fr';
 const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAAFetvs7aO1ZlD6M'; // Key from screenshot
 
-export default function ChatWidget() {
+export default function ChatWidget({ customIcon = null, customText = null }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState([
-        { role: 'bot', type: 'text', content: 'Bonjour ! Je suis votre assistant virtuel. Comment puis-je vous aider ?' }
-    ]);
+    // Initial state has no messages to show the "Welcome" screen first.
+    // We will add the bot greeting only when the conversation "starts" visually or keep it hidden.
+    const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -46,7 +46,7 @@ export default function ChatWidget() {
 
     // Load JWT from localStorage on mount
     useEffect(() => {
-        const storedToken = localStorage.getItem('chat_jwt');
+        const storedToken = localStorage.getItem('chat_access_token') || localStorage.getItem('chat_jwt');
         if (storedToken) {
             setJwt(storedToken);
             setAuthState('authenticated');
@@ -118,11 +118,13 @@ export default function ChatWidget() {
                 setAuthState('otp_input');
                 toast.success('Code envoyé par email !');
             } else {
-                toast.error('Erreur lors de l\'initialisation.');
+                const errorMsg = response.data?.error || 'Erreur lors de l\'initialisation.';
+                toast.error(errorMsg);
             }
         } catch (error) {
             console.error('Auth Init Error:', error);
-            toast.error('Erreur de connexion au serveur.');
+            const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Erreur de connexion au serveur.';
+            toast.error(errorMsg);
         } finally {
             setIsLoading(false);
         }
@@ -146,15 +148,20 @@ export default function ChatWidget() {
             // Handle n8n response which might be an array or object
             const data = Array.isArray(rawData) ? rawData[0] : rawData;
 
-            if (response.status === 200 && data && data.token) {
-                setJwt(data.token);
-                localStorage.setItem('chat_jwt', data.token);
+            if (response.status === 200 && data && data.accessToken) {
+                // Store Tokens
+                setJwt(data.accessToken);
+                localStorage.setItem('chat_access_token', data.accessToken);
+                if (data.refreshToken) {
+                    localStorage.setItem('chat_refresh_token', data.refreshToken);
+                }
+
                 setAuthState('authenticated');
                 toast.success('Authentification réussie !');
 
                 // If there was a pending message, send it now
                 if (pendingMessage) {
-                    sendMessageInternal(pendingMessage.text, pendingMessage.audio, pendingMessage.file, data.token);
+                    sendMessageInternal(pendingMessage.text, pendingMessage.audio, pendingMessage.file, data.accessToken);
                     setPendingMessage(null);
                     setInputValue('');
                     setAudioBlob(null);
@@ -162,24 +169,75 @@ export default function ChatWidget() {
                 }
             } else {
                 console.error('Token missing in response:', data);
-                toast.error('Code incorrect ou erreur serveur.');
+                // Support both error in 200 OK body or generic error
+                const errorMsg = data.error || 'Code incorrect ou erreur serveur.';
+                toast.error(errorMsg);
             }
         } catch (error) {
             console.error('Auth Verify Error:', error);
-            toast.error('Erreur de vérification.');
+            // Handle axios 4xx/5xx errors
+            const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Erreur de vérification.';
+            toast.error(errorMsg);
         } finally {
             setIsLoading(false);
         }
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('chat_access_token');
+        localStorage.removeItem('chat_refresh_token');
+        localStorage.removeItem('chat_jwt'); // Cleanup legacy
+        setJwt(null);
+        setAuthState('email_input'); // Reset to initial state
+        setMessages([]); // Optional: clear history on logout
+        toast.info('Déconnexion réussie.');
+    };
+
+    const refreshAccessToken = async () => {
+        const refreshToken = localStorage.getItem('chat_refresh_token');
+        if (!refreshToken) {
+            throw new Error('No refresh token available');
+        }
+
+        try {
+            const response = await axios.post(`${N8N_URL}/webhook/chat-api`, {
+                action: 'refresh-token',
+                refreshToken: refreshToken
+            });
+
+            const data = Array.isArray(response.data) ? response.data[0] : response.data;
+
+            if (data.accessToken) {
+                console.log('Token refreshed successfully');
+                setJwt(data.accessToken);
+                localStorage.setItem('chat_access_token', data.accessToken);
+
+                if (data.refreshToken) {
+                    localStorage.setItem('chat_refresh_token', data.refreshToken);
+                }
+
+                return data.accessToken;
+            }
+
+            throw new Error('Failed to refresh token');
+        } catch (error) {
+            console.error('Refresh token failed:', error);
+            // Force logout
+            handleLogout();
+            toast.error('Session expirée. Veuillez vous reconnecter.');
+            throw error;
+        }
+    };
+
     // --- Message Logic ---
-    const handleSendMessage = async () => {
-        if ((!inputValue.trim() && !audioBlob && !selectedFile) || isLoading) return;
+    const handleSendMessage = async (textOverride = null) => {
+        const textToSend = textOverride || inputValue;
+        if ((!textToSend.trim() && !audioBlob && !selectedFile) || isLoading) return;
 
         // Check Auth
         if (authState !== 'authenticated') {
             setPendingMessage({
-                text: inputValue,
+                text: textToSend,
                 audio: audioBlob,
                 file: selectedFile
             });
@@ -188,7 +246,7 @@ export default function ChatWidget() {
             return;
         }
 
-        await sendMessageInternal(inputValue, audioBlob, selectedFile, jwt);
+        await sendMessageInternal(textToSend, audioBlob, selectedFile, jwt);
 
         // Reset inputs
         setInputValue('');
@@ -196,16 +254,18 @@ export default function ChatWidget() {
         setSelectedFile(null);
     };
 
-    const sendMessageInternal = async (text, audio, file, token) => {
-        // Add user message to UI
-        const newUserMsg = {
-            role: 'user',
-            type: audio ? 'audio' : (file ? 'file' : 'text'),
-            content: text || (audio ? 'Message vocal' : file?.name),
-            audioUrl: audio ? URL.createObjectURL(audio) : null
-        };
+    const sendMessageInternal = async (text, audio, file, token, isRetry = false) => {
+        // Only add user message to UI if it's the first attempt (not a retry)
+        if (!isRetry) {
+            const newUserMsg = {
+                role: 'user',
+                type: audio ? 'audio' : (file ? 'file' : 'text'),
+                content: text || (audio ? 'Message vocal' : file?.name),
+                audioUrl: audio ? URL.createObjectURL(audio) : null
+            };
+            setMessages(prev => [...prev, newUserMsg]);
+        }
 
-        setMessages(prev => [...prev, newUserMsg]);
         setIsLoading(true);
         setUploadProgress(0);
 
@@ -231,14 +291,28 @@ export default function ChatWidget() {
                 }
             });
 
+            console.log('N8N Raw Response:', response.data);
             const data = Array.isArray(response.data) ? response.data[0] : response.data;
+            console.log('Processed Data:', data);
+
+            // Check for error in success response (e.g. 401 wrapped)
+            if (data.error) {
+                // Check if it's a token error wrapped in 200 OK
+                if (data.error.includes('jwt expired') || data.error.includes('token')) {
+                    const error = new Error(data.error);
+                    error.response = { status: 401 };
+                    throw error;
+                }
+                throw new Error(data.error);
+            }
 
             // Add bot response
-            if (data.response || data.audioResponse) {
+            const textResponse = data.response || data.output;
+            if (textResponse || data.audioResponse) {
                 setMessages(prev => [...prev, {
                     role: 'bot',
                     type: data.audioResponse ? 'audio' : 'text',
-                    content: data.response || 'Message audio reçu',
+                    content: textResponse || 'Message audio reçu',
                     audioUrl: data.audioResponse
                 }]);
             } else {
@@ -248,6 +322,20 @@ export default function ChatWidget() {
 
         } catch (error) {
             console.error('Send Message Error:', error);
+
+            // Handle 401 specifically if token expired
+            if ((error.response?.status === 401 || error.message?.includes('jwt expired')) && !isRetry) {
+                console.log('Access token expired, attempting refresh...');
+                try {
+                    const newToken = await refreshAccessToken();
+                    // Retry with new token
+                    return await sendMessageInternal(text, audio, file, newToken, true);
+                } catch (refreshError) {
+                    // Refresh failed, handled in refreshAccessToken (logout)
+                    return;
+                }
+            }
+
             toast.error('Erreur lors de l\'envoi du message.');
             setMessages(prev => [...prev, { role: 'bot', type: 'text', content: 'Désolé, une erreur est survenue.' }]);
         } finally {
@@ -257,22 +345,123 @@ export default function ChatWidget() {
     };
 
     // --- Render Helpers ---
+    const renderWelcomeScreen = () => {
+        // EDITABLE TEXTS
+        const title = "Votre Assistant Gehringer";
+        const subtitle = "Voici quelques exemples de ce que je peux faire, mais vous pouvez me demander tout ce que vous voulez !";
+
+        const suggestions = [
+            { icon: <Sparkles size={18} />, text: "Personnalisation de l'IA", label: "Nouveau" },
+            { icon: <FileText size={18} />, text: "Rédiger l'ordre du jour de la réunion", label: null },
+            { icon: <FileIcon size={18} />, text: "Analyser des PDF ou des images", label: null },
+            { icon: <ListTodo size={18} />, text: "Créer un outil de suivi des tâches", label: "Nouveau" },
+        ];
+
+        return (
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-6 overflow-y-auto">
+                <div className="w-16 h-16 rounded-full bg-white border shadow-sm flex items-center justify-center mb-2">
+                    {customText ? (
+                        <span className="font-logo text-3xl">{customText}</span>
+                    ) : (
+                        <MessageCircle size={32} className="text-slate-900" />
+                    )}
+                </div>
+
+                <div className="space-y-2">
+                    <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
+                    <p className="text-sm text-gray-500 max-w-[280px] mx-auto leading-relaxed">
+                        {subtitle}
+                    </p>
+                </div>
+
+                <div className="w-full space-y-2">
+                    {suggestions.map((item, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => handleSendMessage(item.text)}
+                            className="w-full flex items-center gap-3 p-3 text-left bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-colors group"
+                        >
+                            <span className="text-gray-400 group-hover:text-slate-900 transition-colors">{item.icon}</span>
+                            <span className="text-sm text-gray-700 flex-1">{item.text}</span>
+                            {item.label && (
+                                <span className="text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                                    {item.label}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    const renderMessages = () => {
+        return (
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                {messages.map((msg, idx) => (
+                    <div key={idx} className={cn("flex", msg.role === 'user' ? "justify-end" : "justify-start")}>
+                        <div className={cn(
+                            "max-w-[85%] p-3 rounded-2xl shadow-sm",
+                            msg.role === 'user' ? "bg-slate-900 text-white rounded-br-none" : "bg-white text-gray-800 border border-gray-200 rounded-bl-none"
+                        )}>
+                            {msg.type === 'text' && <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>}
+                            {msg.type === 'audio' && (
+                                <div className="flex flex-col gap-1">
+                                    <p className="text-xs opacity-70">Message vocal</p>
+                                    <audio controls src={msg.audioUrl} className="h-8 w-48" />
+                                </div>
+                            )}
+                            {msg.type === 'file' && (
+                                <div className="flex items-center gap-2">
+                                    <FileIcon size={16} />
+                                    <span className="text-sm truncate">{msg.content}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+
+                {/* Upload Progress Bar */}
+                {isLoading && uploadProgress > 0 && uploadProgress < 100 && (
+                    <div className="flex justify-end px-4">
+                        <div className="w-[80%] bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                            <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                            <p className="text-xs text-right text-gray-500 mt-1">Envoi... {uploadProgress}%</p>
+                        </div>
+                    </div>
+                )}
+
+                {isLoading && authState === 'authenticated' && uploadProgress === 0 && (
+                    <div className="flex justify-start">
+                        <div className="bg-white text-gray-500 p-3 rounded-2xl border border-gray-200 rounded-bl-none flex items-center gap-2">
+                            <Loader2 className="animate-spin" size={16} />
+                            <span className="text-sm">Thinking...</span>
+                        </div>
+                    </div>
+                )}
+                <div ref={messagesEndRef} />
+            </div>
+        );
+    };
+
     const renderContent = () => {
         if (authState === 'email_input') {
             return (
-                <div className="p-4 flex flex-col gap-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Connexion requise</h3>
-                    <p className="text-sm text-gray-600">Veuillez entrer votre email pour continuer.</p>
-                    <form onSubmit={handleAuthInit} className="flex flex-col gap-3">
+                <div className="p-6 flex flex-col gap-6 h-full justify-center">
+                    <div className="text-center space-y-2">
+                        <h3 className="text-xl font-semibold text-gray-900">Connexion requise</h3>
+                        <p className="text-sm text-gray-500">Veuillez entrer votre email pour continuer.</p>
+                    </div>
+                    <form onSubmit={handleAuthInit} className="flex flex-col gap-4">
                         <input
                             type="email"
                             placeholder="votre@email.com"
-                            className="p-2 border rounded-md focus:ring-2 focus:ring-blue-900 outline-none"
+                            className="p-3 border rounded-xl focus:ring-2 focus:ring-slate-900 outline-none transition-all"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
                         />
-                        <div className="w-full overflow-hidden">
+                        <div className="w-full overflow-hidden rounded-xl">
                             <Turnstile
                                 siteKey={TURNSTILE_SITE_KEY}
                                 onSuccess={setTurnstileToken}
@@ -282,7 +471,7 @@ export default function ChatWidget() {
                         <button
                             type="submit"
                             disabled={isLoading || !turnstileToken}
-                            className="bg-blue-900 text-white p-2 rounded-md hover:bg-blue-800 disabled:opacity-50 transition-colors"
+                            className="bg-slate-900 text-white p-3 rounded-xl hover:bg-slate-800 disabled:opacity-50 transition-colors font-medium"
                         >
                             {isLoading ? <Loader2 className="animate-spin mx-auto" /> : 'Recevoir le code'}
                         </button>
@@ -300,14 +489,16 @@ export default function ChatWidget() {
 
         if (authState === 'otp_input') {
             return (
-                <div className="p-4 flex flex-col gap-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Vérification</h3>
-                    <p className="text-sm text-gray-600">Entrez le code reçu par email.</p>
-                    <form onSubmit={handleAuthVerify} className="flex flex-col gap-3">
+                <div className="p-6 flex flex-col gap-6 h-full justify-center">
+                    <div className="text-center space-y-2">
+                        <h3 className="text-xl font-semibold text-gray-900">Vérification</h3>
+                        <p className="text-sm text-gray-500">Entrez le code reçu par email.</p>
+                    </div>
+                    <form onSubmit={handleAuthVerify} className="flex flex-col gap-4">
                         <input
                             type="text"
                             placeholder="123456"
-                            className="p-2 border rounded-md focus:ring-2 focus:ring-blue-900 outline-none"
+                            className="p-3 border rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-center tracking-widest text-lg"
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
                             required
@@ -315,7 +506,7 @@ export default function ChatWidget() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="bg-blue-900 text-white p-2 rounded-md hover:bg-blue-800 disabled:opacity-50 transition-colors"
+                            className="bg-slate-900 text-white p-3 rounded-xl hover:bg-slate-800 disabled:opacity-50 transition-colors font-medium"
                         >
                             {isLoading ? <Loader2 className="animate-spin mx-auto" /> : 'Vérifier'}
                         </button>
@@ -331,90 +522,60 @@ export default function ChatWidget() {
             );
         }
 
+        // Main Chat Interface
         return (
             <>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                    {messages.map((msg, idx) => (
-                        <div key={idx} className={cn("flex", msg.role === 'user' ? "justify-end" : "justify-start")}>
-                            <div className={cn(
-                                "max-w-[80%] p-3 rounded-lg shadow-sm",
-                                msg.role === 'user' ? "bg-blue-900 text-white rounded-br-none" : "bg-white text-gray-800 border border-gray-200 rounded-bl-none"
-                            )}>
-                                {msg.type === 'text' && <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
-                                {msg.type === 'audio' && (
-                                    <div className="flex flex-col gap-1">
-                                        <p className="text-xs opacity-70">Message vocal</p>
-                                        <audio controls src={msg.audioUrl} className="h-8 w-48" />
-                                    </div>
-                                )}
-                                {msg.type === 'file' && (
-                                    <div className="flex items-center gap-2">
-                                        <FileIcon size={16} />
-                                        <span className="text-sm truncate">{msg.content}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* Upload Progress Bar */}
-                    {isLoading && uploadProgress > 0 && uploadProgress < 100 && (
-                        <div className="flex justify-end px-4">
-                            <div className="w-[80%] bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                                <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                                <p className="text-xs text-right text-gray-500 mt-1">Envoi... {uploadProgress}%</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {isLoading && authState === 'authenticated' && uploadProgress === 0 && (
-                        <div className="flex justify-start">
-                            <div className="bg-white text-gray-500 p-3 rounded-lg border border-gray-200 rounded-bl-none flex items-center gap-2">
-                                <Loader2 className="animate-spin" size={16} />
-                                <span className="text-sm">Thinking...</span>
-                            </div>
-                        </div>
-                    )}
-                    <div ref={messagesEndRef} />
+                {/* Header for Chat Window */}
+                <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-100 rounded-t-2xl">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <h2 className="font-semibold text-gray-800">Assistant Gehringer</h2>
+                    </div>
+                    <div className="flex items-center gap-2"> {/* Added a wrapper div for alignment */}
+                        {authState === 'authenticated' && (
+                            <button
+                                onClick={handleLogout}
+                                className="mr-2 text-xs font-medium text-slate-500 hover:text-red-600 bg-white hover:bg-red-50 px-2 py-1 rounded transition-colors border border-gray-200"
+                                title="Se déconnecter de la session"
+                            >
+                                Déconnexion
+                            </button>
+                        )}
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
 
+                {/* Messages or Welcome Screen */}
+                {messages.length > 0 ? renderMessages() : renderWelcomeScreen()}
+
                 {/* Input Area */}
-                <div className="p-3 bg-white border-t border-gray-200">
+                <div className="p-4 bg-white">
                     {/* Preview Attachments */}
                     {(audioBlob || selectedFile) && (
-                        <div className="flex gap-2 mb-2 overflow-x-auto">
+                        <div className="flex gap-2 mb-3 overflow-x-auto">
                             {audioBlob && (
-                                <div className="flex items-center gap-1 bg-red-50 text-red-600 px-2 py-1 rounded-full text-xs border border-red-100">
-                                    <Mic size={12} /> Audio <button onClick={() => setAudioBlob(null)}><X size={12} /></button>
+                                <div className="flex items-center gap-1 bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-xs border border-red-100 font-medium">
+                                    <Mic size={14} /> Audio <button onClick={() => setAudioBlob(null)} className="ml-1 hover:text-red-800"><X size={14} /></button>
                                 </div>
                             )}
                             {selectedFile && (
-                                <div className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-1 rounded-full text-xs border border-blue-100">
-                                    <FileIcon size={12} /> {selectedFile.name} <button onClick={() => setSelectedFile(null)}><X size={12} /></button>
+                                <div className="flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-xs border border-blue-100 font-medium">
+                                    <FileIcon size={14} /> {selectedFile.name} <button onClick={() => setSelectedFile(null)} className="ml-1 hover:text-blue-800"><X size={14} /></button>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    <div className="flex items-end gap-2">
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="p-2 text-gray-500 hover:text-blue-900 transition-colors"
-                            title="Joindre un fichier"
-                        >
-                            <Paperclip size={20} />
-                        </button>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            onChange={handleFileSelect}
-                        />
-
+                    <div className="relative border border-gray-200 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-slate-900/10 focus-within:border-slate-900 transition-all bg-white">
                         <textarea
-                            className="flex-1 max-h-32 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-900 outline-none resize-none text-sm"
+                            className="w-full max-h-32 p-3 pb-10 bg-transparent outline-none resize-none text-sm placeholder:text-gray-400"
                             rows={1}
-                            placeholder="Écrivez votre message..."
+                            placeholder="Demander, chercher ou créer ce que vous voulez..."
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={(e) => {
@@ -425,25 +586,54 @@ export default function ChatWidget() {
                             }}
                         />
 
-                        {inputValue.trim() || audioBlob || selectedFile ? (
-                            <button
-                                onClick={handleSendMessage}
-                                disabled={isLoading}
-                                className="p-2 bg-blue-900 text-white rounded-full hover:bg-blue-800 transition-colors disabled:opacity-50"
-                            >
-                                <Send size={20} />
-                            </button>
-                        ) : (
-                            <button
-                                onClick={isRecording ? stopRecording : startRecording}
-                                className={cn(
-                                    "p-3 sm:p-2 rounded-full transition-all duration-300 flex items-center justify-center",
-                                    isRecording ? "bg-red-500 text-white animate-pulse shadow-lg scale-110" : "text-gray-500 hover:text-blue-900 bg-gray-100 sm:bg-transparent"
+                        {/* Bottom Actions inside Input */}
+                        <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="p-1.5 text-gray-400 hover:text-slate-900 transition-colors rounded-md hover:bg-gray-50"
+                                    title="Joindre un fichier"
+                                >
+                                    <Paperclip size={16} />
+                                </button>
+                                <button
+                                    className="flex items-center gap-1 p-1.5 text-gray-400 hover:text-slate-900 transition-colors rounded-md hover:bg-gray-50 text-xs font-medium"
+                                >
+                                    <Globe size={16} /> <span className="hidden sm:inline">Toutes les sources</span>
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    onChange={handleFileSelect}
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {inputValue.trim() || audioBlob || selectedFile ? (
+                                    <button
+                                        onClick={() => handleSendMessage()}
+                                        disabled={isLoading}
+                                        className="p-1.5 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50"
+                                    >
+                                        <ArrowUp size={16} />
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={isRecording ? stopRecording : startRecording}
+                                        className={cn(
+                                            "p-1.5 rounded-md transition-all duration-300",
+                                            isRecording ? "bg-red-500 text-white animate-pulse" : "text-gray-400 hover:text-slate-900 hover:bg-gray-50"
+                                        )}
+                                    >
+                                        {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
+                                    </button>
                                 )}
-                            >
-                                {isRecording ? <StopCircle size={28} /> : <Mic size={28} className="sm:w-6 sm:h-6" />}
-                            </button>
-                        )}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-center mt-2">
+                        <p className="text-[10px] text-gray-400">L'IA peut faire des erreurs. Vérifiez les informations importantes.</p>
                     </div>
                 </div>
             </>
@@ -454,30 +644,47 @@ export default function ChatWidget() {
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
             <Toaster position="top-center" richColors />
             {isOpen && (
-                <div className="mb-4 w-[350px] sm:w-[400px] h-[500px] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
-                    {/* Header */}
-                    <div className="bg-blue-900 p-4 flex justify-between items-center text-white">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                            <h2 className="font-semibold">Assistant Gehringer</h2>
-                        </div>
-                        <button onClick={() => setIsOpen(false)} className="hover:bg-blue-800 p-1 rounded">
-                            <X size={20} />
-                        </button>
-                    </div>
-
-                    {/* Content */}
+                <div className="mb-4 w-[350px] sm:w-[400px] h-[600px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
                     {renderContent()}
                 </div>
             )}
 
-            {/* Toggle Button */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="bg-blue-900 hover:bg-blue-800 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-105 flex items-center justify-center"
-            >
-                {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
-            </button>
+            {/* Toggle Button Container with Tooltip */}
+            <div className="relative group">
+                {/* Tooltip */}
+                <div className="absolute bottom-full right-0 mb-3 w-max max-w-[200px] bg-black text-white text-xs px-3 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-y-2 group-hover:translate-y-0">
+                    Bonjour, c'est l'A.I. de Gehringer
+                    {/* Arrow */}
+                    <div className="absolute top-full right-6 -mt-1 border-4 border-transparent border-t-black"></div>
+                </div>
+
+                {/* Toggle Button */}
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className={cn(
+                        "bg-slate-900 hover:bg-slate-800 text-white rounded-full shadow-2xl shadow-slate-900/30 transition-all duration-300 hover:scale-110 hover:-translate-y-1 flex items-center justify-center",
+                        (customIcon || customText) && !isOpen ? "w-16 h-16 p-0 overflow-hidden border-4 border-white" : "p-4"
+                    )}
+                >
+                    {isOpen ? (
+                        <X size={24} className="transition-transform duration-300 rotate-90" />
+                    ) : (
+                        customIcon ? (
+                            <img
+                                src={customIcon}
+                                alt="Chat"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            />
+                        ) : customText ? (
+                            <span className="font-logo text-2xl leading-none pt-1 transition-transform duration-300 group-hover:scale-110">
+                                {customText}
+                            </span>
+                        ) : (
+                            <MessageCircle size={24} className="transition-transform duration-300 group-hover:scale-110" />
+                        )
+                    )}
+                </button>
+            </div>
         </div>
     );
 }

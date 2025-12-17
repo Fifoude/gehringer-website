@@ -1,0 +1,134 @@
+{
+    "name": "Générateur PDF (Gotenberg) - Gehringer.fr v5",
+    "nodes": [
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                0,
+                0
+            ],
+            "id": "chat-trigger",
+            "name": "Chat Trigger"
+        },
+        {
+            "parameters": {
+                "options": {
+                    "systemMessage": "Tu es un expert en rédaction de CV.\nTon rôle est de générer du CODE HTML propre pour un CV, basé sur les informations qu'on te donne.\nNe réponds QUE par du code HTML, rien d'autre. Pas de 'Voici le code'. Juste le HTML.\n\nUtilise TailwindCSS (via CDN) pour le style.\nStructure attendue :\n- Header (Nom, Titre)\n- Résumé Executif\n- Expériences clés (celles fournies)\n- Liste de compétences."
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.7,
+            "position": [
+                220,
+                0
+            ],
+            "id": "cv-writer-agent",
+            "name": "CV Writer Agent"
+        },
+        {
+            "parameters": {
+                "model": "gpt-4o",
+                "options": {
+                    "temperature": 0.5
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+            "typeVersion": 1,
+            "position": [
+                200,
+                280
+            ],
+            "id": "openai-model",
+            "name": "OpenAI Model"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://gotenberg:3000/forms/chromium/convert/html",
+                "sendBody": true,
+                "contentType": "multipart-form-data",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "files",
+                            "parameterType": "formBinaryData",
+                            "inputDataFieldName": "index.html"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                580,
+                0
+            ],
+            "id": "gotenberg-api",
+            "name": "Gotenberg PDF"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Préparation pour Gotenberg\n// Gotenberg attend un fichier nommé index.html dans un form-data\n\nconst htmlContent = items[0].json.output; // Le HTML généré par l'IA\n\nreturn [{\n  binary: {\n    'index.html': {\n      data: Buffer.from(htmlContent).toString('base64'),\n      mimeType: 'text/html',\n      fileName: 'index.html'\n    }\n  }\n}];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                400,
+                0
+            ],
+            "id": "prepare-html",
+            "name": "Prepare HTML File"
+        }
+    ],
+    "connections": {
+        "Chat Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "CV Writer Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "CV Writer Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "CV Writer Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare HTML File",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare HTML File": {
+            "main": [
+                [
+                    {
+                        "node": "Gotenberg PDF",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

@@ -1,0 +1,425 @@
+{
+    "name": "Unified RAG Chat & PDF Generator",
+    "nodes": [
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                -200,
+                0
+            ],
+            "id": "chat-trigger",
+            "name": "Chat Interface"
+        },
+        {
+            "parameters": {
+                "options": {
+                    "systemMessage": "Tu es l'IA de Philippe Gehringer.\n\nOBJECTIF :\n1. Répondre aux questions sur le parcours de Philippe en utilisant l'outil 'experience_pro_db'.\n2. Si on te donne une Fiche de Poste (Job Description), analyse la correspondance (Matching) avec le profil de Philippe.\n\nGÉNÉRATION DE CV :\nSi l'utilisateur demande explicitement un CV ou une Lettre, ou si le matching est fort (>80%) et que tu proposes d'en générer un :\n- Rédige un CV complet au format HTML en utilisant TailwindCSS.\n- Mets en avant UNIQUEMENT les expériences pertinentes trouvées dans Qdrant.\n- IMPORTANT : Encadre ton code HTML avec les balises <GENERATE_PDF> et </GENERATE_PDF>. \n\nExemple :\n<GENERATE_PDF>\n<html>...</html>\n</GENERATE_PDF>\n\nSinon, réponds simplement en texte."
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.7,
+            "position": [
+                280,
+                0
+            ],
+            "id": "ai-agent",
+            "name": "Super Agent (RAG + Writer)"
+        },
+        {
+            "parameters": {
+                "model": "gpt-4o",
+                "options": {
+                    "temperature": 0.4
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+            "typeVersion": 1,
+            "position": [
+                240,
+                280
+            ],
+            "id": "openai-model",
+            "name": "OpenAI Model"
+        },
+        {
+            "parameters": {
+                "name": "experience_pro_db",
+                "description": "Base de connaissance des expériences, missions et compétences de Philippe.",
+                "topK": 6
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+            "typeVersion": 1,
+            "position": [
+                500,
+                280
+            ],
+            "id": "vector-tool",
+            "name": "Mémoire Expériences"
+        },
+        {
+            "parameters": {
+                "qdrantCollection": {
+                    "__rl": true,
+                    "value": "experience_pro",
+                    "mode": "list",
+                    "cachedResultName": "experience_pro"
+                },
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+            "typeVersion": 1,
+            "position": [
+                620,
+                480
+            ],
+            "id": "qdrant-store",
+            "name": "Qdrant Store"
+        },
+        {
+            "parameters": {
+                "model": "embeddinggemma:latest"
+            },
+            "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+            "typeVersion": 1,
+            "position": [
+                620,
+                660
+            ],
+            "id": "ollama-embeddings",
+            "name": "Embeddings Ollama"
+        },
+        {
+            "parameters": {},
+            "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+            "typeVersion": 1.2,
+            "position": [
+                380,
+                440
+            ],
+            "id": "memory",
+            "name": "Memory"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Détection du Trigger : Fichier ou Texte seul ?\nif (items[0].binary && Object.keys(items[0].binary).length > 0) {\n  return [{ json: { has_file: true, ...items[0].json }, binary: items[0].binary }];\n}\nreturn [{ json: { has_file: false, ...items[0].json } }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "id": "check-input",
+            "name": "Check Input"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.has_file }}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                160,
+                -160
+            ],
+            "id": "has-file-if",
+            "name": "Has File?"
+        },
+        {
+            "parameters": {
+                "dataType": "binary",
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+            "typeVersion": 1,
+            "position": [
+                360,
+                -200
+            ],
+            "id": "file-loader",
+            "name": "Read File"
+        },
+        {
+            "parameters": {
+                "chunkSize": 4000
+            },
+            "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+            "typeVersion": 1,
+            "position": [
+                480,
+                -100
+            ],
+            "id": "text-splitter",
+            "name": "Splitter"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Post-Processing : Détection de demande de PDF\nconst text = items[0].json.output;\nconst regex = /<GENERATE_PDF>([\\s\\S]*?)<\\/GENERATE_PDF>/;\nconst match = text.match(regex);\n\nif (match) {\n  const htmlUtils = match[1];\n  // On nettoie le texte pour l'utilisateur (on retire le technique)\n  const cleanText = text.replace(regex, \"(Document PDF généré ci-dessous)\");\n  return [\n    { \n      json: { \n        is_pdf: true, \n        html: htmlUtils, \n        text: cleanText \n      } \n    }\n  ];\n}\n\nreturn [\n  { \n    json: { \n      is_pdf: false, \n      text: text \n    } \n  }\n];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                660,
+                0
+            ],
+            "id": "post-process",
+            "name": "Detect PDF Request"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.is_pdf }}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                860,
+                0
+            ],
+            "id": "is-pdf-if",
+            "name": "Is PDF?"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://gotenberg:3000/forms/chromium/convert/html",
+                "sendBody": true,
+                "contentType": "multipart-form-data",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "files",
+                            "parameterType": "formBinaryData",
+                            "inputDataFieldName": "index.html"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1220,
+                -100
+            ],
+            "id": "gotenberg-api",
+            "name": "Gotenberg PDF"
+        },
+        {
+            "parameters": {
+                "jsCode": "const htmlContent = items[0].json.html;\nreturn [{\n  binary: {\n    'index.html': {\n      data: Buffer.from(htmlContent).toString('base64'),\n      mimeType: 'text/html',\n      fileName: 'index.html'\n    }\n  },\n  json: items[0].json\n}];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1060,
+                -100
+            ],
+            "id": "prepare-binary",
+            "name": "Prepare Binary"
+        },
+        {
+            "parameters": {
+                "fileName": "=/home/node/generated_cv_{{ $now.format('yyyyMMdd_HHmm') }}.pdf",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.writeBinaryFile",
+            "typeVersion": 1,
+            "position": [
+                1400,
+                -100
+            ],
+            "id": "save-file",
+            "name": "Save to Disk"
+        }
+    ],
+    "connections": {
+        "Chat Interface": {
+            "main": [
+                [
+                    {
+                        "node": "Check Input",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Input": {
+            "main": [
+                [
+                    {
+                        "node": "Has File?",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Super Agent (RAG + Writer)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Has File?": {
+            "main": [
+                [
+                    {
+                        "node": "Read File",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Read File": {
+            "main": [
+                [
+                    {
+                        "node": "Super Agent (RAG + Writer)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Splitter": {
+            "ai_textSplitter": [
+                [
+                    {
+                        "node": "Read File",
+                        "type": "ai_textSplitter",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Super Agent (RAG + Writer)",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mémoire Expériences": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Super Agent (RAG + Writer)",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Qdrant Store": {
+            "ai_vectorStore": [
+                [
+                    {
+                        "node": "Mémoire Expériences",
+                        "type": "ai_vectorStore",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Embeddings Ollama": {
+            "ai_embedding": [
+                [
+                    {
+                        "node": "Qdrant Store",
+                        "type": "ai_embedding",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Memory": {
+            "ai_memory": [
+                [
+                    {
+                        "node": "Super Agent (RAG + Writer)",
+                        "type": "ai_memory",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Super Agent (RAG + Writer)": {
+            "main": [
+                [
+                    {
+                        "node": "Detect PDF Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Detect PDF Request": {
+            "main": [
+                [
+                    {
+                        "node": "Is PDF?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is PDF?": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare Binary",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Binary": {
+            "main": [
+                [
+                    {
+                        "node": "Gotenberg PDF",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gotenberg PDF": {
+            "main": [
+                [
+                    {
+                        "node": "Save to Disk",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

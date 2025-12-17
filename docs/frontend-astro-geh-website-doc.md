@@ -14,7 +14,11 @@
 
 ## 🎯 Objectif de ce document
 
-Ce document décrit l'architecture, le fonctionnement et les composants du site web **gehringer.fr**, développé avec Astro, Tailwind CSS et déployé sur Netlify. Il est destiné aux développeurs et IA qui doivent maintenir, améliorer ou étendre le site.
+Ce document décrit l'architecture, le fonctionnement et les composants du site web **gehringer.fr**, développé avec Astro, Tailwind CSS et déployé sur Netlify.
+
+> 🔗 **Pour une vision d'ensemble du projet, de l'architecture complète (incluant l'IA) et de la roadmap, consultez le document maître :** [`architecture-and-roadmap.md`](architecture-and-roadmap.md).
+
+Il est destiné aux développeurs et IA qui doivent maintenir, améliorer ou étendre le site.
 
 ---
 
@@ -23,9 +27,11 @@ Ce document décrit l'architecture, le fonctionnement et les composants du site 
 ### Informations générales
 - **URL de production**: https://www.gehringer.fr
 - **Repository GitHub**: Fifoude/gehringer-website
-- **Framework**: Astro 5.15.3
+- **Framework**: Astro 5.15.3 (React Integration)
 - **Styling**: Tailwind CSS 4.1.16
 - **Graphiques**: Recharts 3.3.0
+- **Icons**: Lucide React
+- **Notifications**: Sonner
 - **Hébergement**: Netlify
 - **Déploiement**: Automatique via GitHub → Netlify
 
@@ -69,9 +75,17 @@ gehringer-website/
     "astro": "astro"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.0.2",
     "@tailwindcss/vite": "^4.1.16",
     "astro": "^5.15.3",
+    "axios": "^1.7.7",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.460.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "recharts": "^3.3.0",
+    "sonner": "^1.7.0",
+    "tailwind-merge": "^2.5.4",
     "tailwindcss": "^4.1.16"
   }
 }
@@ -176,7 +190,33 @@ npm run preview    # → http://localhost:4321
 .page-title {
   @apply font-logo text-5xl text-center text-gray-900 mb-12;
 }
+#### Titres de page
+```css
+.page-title {
+  @apply font-logo text-5xl text-center text-gray-900 mb-12;
+}
 ```
+
+### Widget Chat IA (`ChatWidget.jsx`)
+
+Composant React interactif flottant permettant de dialoguer avec l'IA du site.
+
+- **Stack**: React, Lucide Icons, Axios
+- **Features**:
+  - 🎤 Enregistrement vocal (MediaRecorder API)
+  - 📎 Upload de fichiers
+  - 🔒 Authentification OTP (Email + Turnstile)
+  - 💬 Interface type "ChatGPT" avec historique
+- **Couleurs**: Utilise `bg-slate-900` pour l'identité visuelle (bouton, header, messages user).
+
+> 🤖 **Architecture IA** : Ce widget n'est que la partie visible. Le backend repose sur une architecture complexe (n8n, Qdrant, Ollama, Gotenberg) décrite dans le document [`architecture-and-roadmap.md`](architecture-and-roadmap.md).
+
+```jsx
+// Utilisation dans Layout.astro
+<ChatWidget client:load customText="PG" />
+```
+
+---
 
 ---
 
@@ -328,6 +368,22 @@ Sitemap: https://www.gehringer.fr/sitemap.xml
 - ✅ Appels API depuis backend (Netlify Function)
 - ✅ CORS configuré
 - ⚠️ `rejectUnauthorized: false` (SSL APsystems non vérifié)
+
+#### Authentification Chat (JWT & Turnstile)
+Le Widget Chat utilise un flux sécurisé pour éviter les abus :
+1. **Cloudflare Turnstile**: Protection anti-bot sur le formulaire d'email.
+2. **OTP (One-Time Password)**: Code envoyé par email via n8n.
+3. **JWT (JSON Web Token)**: Stocké en `localStorage` après validation OTP, utilisé pour authentifier les requêtes WebSocket/HTTP vers n8n.
+
+### Variables d'environnement
+À configurer dans Netlify :
+```bash
+# N8N
+PUBLIC_N8N_WEBHOOK_URL="https://n8n.gehringer.fr"
+
+# Sécurité
+PUBLIC_TURNSTILE_SITE_KEY="0x4AAAAAAAFetvs7aO1ZlD6M" # Clé Site Cloudflare
+```
 
 ---
 
@@ -486,7 +542,8 @@ export default defineConfig({
 ## 🐛 Problèmes connus & Solutions
 
 ### 1. Page `/solar` non protégée
-**Problème**: Page accessible publiquement, contient données privées.
+**Statut**: Cette page est **privée** par destination (dashboard personnel) mais actuellement **publique** par commodité lors du développement.
+**Problème**: Accessible publiquement, contient données privées.
 
 **Solutions possibles**:
 - **Option A**: Authentification basique HTTP
@@ -798,6 +855,15 @@ const currentPath = Astro.url.pathname;
 </Layout>
 
 <!-- 5. Styles scoped (si nécessaire) -->
+
+---
+
+## 📝 Changelog
+
+| Date | Version | Modifications |
+|------|---------|---------------|
+| 2025-11-20 | 1.0 | Création du document initial |
+| 2025-12-05 | 1.1 | Ajout documentation ChatWidget (React, Auth, Audio) et mise à jour dépendances |
 <style>
   /* Styles spécifiques au composant */
 </style>

@@ -1,0 +1,107 @@
+{
+  "name": "API Astro",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "astro-data",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fcf0740b-a8b6-4a35-b29d-a928e53d01f2",
+      "name": "Webhook",
+      "webhookId": "0a63e1f4-6481-4c6d-8db0-d55c77f990d1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "r7fhudUyDIqwqXUC",
+          "mode": "list",
+          "cachedResultName": "solar_data",
+          "cachedResultUrl": "/projects/HmXlcweiu5I7NsBE/datatables/r7fhudUyDIqwqXUC"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "date",
+              "keyValue": "={{ $json.query.date }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "966086b9-bb97-45a2-bd9c-3e71e1b69d89",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "037e7191-d3e9-4b56-a228-1db6dd81623c",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fba0c3fa-2971-4657-9e5b-e5ff71842316",
+  "meta": {
+    "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"
+  },
+  "id": "6IIswAnmueTOgoTb",
+  "tags": []
+}

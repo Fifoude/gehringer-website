@@ -1,0 +1,472 @@
+{
+  "name": "Workflow B - Données Temps Réel",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "020ae941-95ff-4e30-8c87-c6c5764c29c7",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        400
+      ],
+      "typeVersion": 1.2,
+      "notes": "⏰ Toutes les heures (24/7) | Collecte données solaires temps réel\nExécution: production, prévisions, météo solaire"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Prepare timestamp and date information for API calls\n * - Gets current time in Paris timezone\n * - Determines if sunrise-sunset data should be fetched (first hour of day)\n */\nconst now = new Date();\nconst parisTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));\n\n// Format ISO avec timezone\nconst currentTimeISO = now.toISOString();\nconst currentDate = parisTime.toISOString().split('T')[0];\nconst currentHour = parisTime.getHours();\n\nreturn [{\n  json: {\n    currentTime: currentTimeISO,\n    currentDate: currentDate,\n    currentHour: currentHour,\n    isFirstHourOfDay: currentHour === 0\n    //isFirstHourOfDay: true    \n  }\n}];"
+      },
+      "id": "c601ae41-d560-4bfa-9bb4-160d8e025231",
+      "name": "Préparation Date/Heure",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        464,
+        400
+      ],
+      "typeVersion": 2,
+      "notes": "📅 Prépare timestamp + date/heure Paris\nDétecte si première heure du jour (00h) pour sunrise"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "abM82bfSG5sXl5Dz",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/abM82bfSG5sXl5Dz",
+          "cachedResultName": "[SUB] APsystems - Données Horaires"
+        },
+        "options": {}
+      },
+      "id": "7d12266e-0dba-4dcf-a7ac-e7109bf5fb8f",
+      "name": "Appel SUB APsystems",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        704,
+        192
+      ],
+      "typeVersion": 1.1,
+      "notes": "🔌 SUB APsystems: Production AUJOURD'HUI\nRécupère données PV cumulées depuis minuit"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "nsco3pmEcQHA5Ax7",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/nsco3pmEcQHA5Ax7"
+        },
+        "options": {}
+      },
+      "id": "a729550e-f172-48bd-b4b7-997515c475a3",
+      "name": "Appel SUB Forecast Heure",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        688,
+        400
+      ],
+      "typeVersion": 1.1,
+      "notes": "🔮 SUB Forecast Heure: Prévisions horaires\nPrévisions cumulées par heure pour aujourd'hui"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "O2kp4R4akvxZdBZW",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/O2kp4R4akvxZdBZW"
+        },
+        "options": {}
+      },
+      "id": "7949f308-19ea-4c2e-a151-93600997ae48",
+      "name": "Appel SUB Forecast Jour",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        688,
+        608
+      ],
+      "typeVersion": 1.1,
+      "notes": "🌞 SUB Forecast Jour: Prévision totale journalière\nProduction totale attendue pour la journée"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "id": "a2fb88ff-7b86-4f9c-abc5-185f9f9b8873",
+      "name": "Fusion Données",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        1088,
+        400
+      ],
+      "typeVersion": 3,
+      "notes": "🔀 Fusionne 4 sources de données:\n1. APsystems (réel)\n2. Forecast heure\n3. Forecast jour\n4. Sunrise (si dispo)"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Format data for energy_hourly Data Table\n * - 24 lignes (0–23)\n * - forecast_* : issus de forecast.solar\n * - *_kwh réels : issus d'APsystems (data.produced/consumed/imported/exported)\n * - champs calculés :\n *    autoconsumed_kwh     = produced_kwh - exported_kwh (>= 0)\n *    autosufficiency_pct  = autoconsumed_kwh / consumed_kwh * 100\n *    autoconsumption_pct  = autoconsumed_kwh / produced_kwh * 100\n */\n\nconst main = $input.first().json; // ton gros objet combiné\n\n// Données APsystems (arrays sur 24h)\nconst data = main.data || {};\nconst times = data.time || [];\nconst producedArr = data.produced || [];\nconst consumedArr = data.consumed || [];\nconst importedArr = data.imported || [];\nconst exportedArr = data.exported || [];\n\n// Prévisions forecast.solar\nconst hourlyForecastsAll = main.hourlyForecasts || [];\nconst dayForecasts = main.forecasts || [];\n\n// Récupérer l'heure actuelle en timezone Paris\nconst now = new Date();\nconst parisTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));\nconst utcTime = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));\nconst currentHour = parisTime.getHours();\nconst currentDate = parisTime.toISOString().split('T')[0];\n\n// Calcul du décalage horaire (Paris - UTC)\n// En hiver: Paris (UTC+1) - UTC = 1 heure\n// En été: Paris (UTC+2) - UTC = 2 heures\nconst offsetHours = Math.round((parisTime - utcTime) / 3600000);\n\n// Prévision du jour (totale)\nconst todayForecast = dayForecasts.find(f => f.date === currentDate);\nconst forecastDayKwh = todayForecast ? todayForecast.forecast_kwh : 0;\n\n// Prévisions horaires du jour\nconst hourlyForecasts = hourlyForecastsAll.filter(f => f.date === currentDate);\n\n// Timestamp : on reprend celui de la donnée, ou fallback sur maintenant\nconst timestamp = main.timestamp ||\n  new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Paris' }).replace(' ', 'T');\n\n// Petite utilitaire pour lire proprement un tableau\nfunction getNumericAt(arr, idx) {\n  if (!arr || idx < 0 || idx >= arr.length) return null;\n  const v = arr[idx];\n  if (v === null || v === undefined) return null;\n  const n = parseFloat(v);\n  return isNaN(n) ? null : n;\n}\n\nconst energyRows = [];\n\nfor (let hour = 0; hour < 24; hour++) {\n  // Forecast cumulée pour cette heure\n  const hourForecast = hourlyForecasts.find(f => {\n    const h = parseInt(f.time.split(':')[0], 10);\n    return h === hour;\n  });\n  const forecastHourCumulKwh = hourForecast ? hourForecast.forecast_kwh : 0;\n\n  const row = {\n    timestamp,\n    date: currentDate,\n    hour,\n    forecast_day_kwh: forecastDayKwh,\n    forecast_hour_cumul_kwh: forecastHourCumulKwh,\n  };\n\n  // Index dans les arrays APsystems (time = \"00\", \"01\", ..., \"23\")\n  // APsystems renvoie souvent les données en UTC, donc on doit compenser le décalage\n  let apiHour = hour - offsetHours;\n  \n  // Si apiHour < 0 (ex: 00h Paris = 23h UTC veille), on ne trouvera pas les données dans le tableau du jour\n  // Ce n'est pas grave pour le solaire (la nuit), mais on gère le cas proprement\n  const hourStr = apiHour >= 0 ? apiHour.toString().padStart(2, '0') : 'XX';\n  const idx = times.indexOf(hourStr);\n\n  // On ne met des données réelles que si on a un index valide et que l'heure est passée\n  if (idx !== -1 && hour <= currentHour) {\n    const produced_kwh = getNumericAt(producedArr, idx);\n    const consumed_kwh = getNumericAt(consumedArr, idx);\n    const imported_kwh = getNumericAt(importedArr, idx);\n    const exported_kwh = getNumericAt(exportedArr, idx);\n\n    if (produced_kwh != null) row.produced_kwh = produced_kwh;\n    if (consumed_kwh != null) row.consumed_kwh = consumed_kwh;\n    if (imported_kwh != null) row.imported_kwh = imported_kwh;\n    if (exported_kwh != null) row.exported_kwh = exported_kwh;\n\n    // autoconsommation en kWh (production utilisée sur place)\n    let autoconsumed_kwh = null;\n    if (produced_kwh != null && exported_kwh != null) {\n      let autoconsumed = produced_kwh - exported_kwh;\n      if (autoconsumed < 0) autoconsumed = 0;\n      autoconsumed_kwh = +autoconsumed.toFixed(6);\n      row.autoconsumed_kwh = autoconsumed_kwh;\n    }\n\n    // % d'autonomie = part de la conso couverte par la production locale\n    if (autoconsumed_kwh != null && consumed_kwh != null && consumed_kwh > 0) {\n      row.autosufficiency_pct = +((autoconsumed_kwh / consumed_kwh) * 100).toFixed(1);\n    }\n\n// % d'autoconsommation = part de la production consommée sur place\n    if (autoconsumed_kwh != null && produced_kwh != null && produced_kwh > 0) {\n      row.autoconsumption_pct = +((autoconsumed_kwh / produced_kwh) * 100).toFixed(1);\n    }\n    \n    // ✅ FIX: Push row ONLY if we have data\n    energyRows.push({ json: row });\n\n  } else if (hour <= currentHour && apiHour < 0) {\n    // FIX: Cas particulier 00h00 (Donnée manquante car sur J-1)\n    // On force à 0 pour éviter les NULLs\n    row.produced_kwh = 0;\n    row.consumed_kwh = 0;\n    row.imported_kwh = 0;\n    row.exported_kwh = 0;\n    row.autoconsumed_kwh = 0;\n    row.autosufficiency_pct = 0;\n    row.autoconsumption_pct = 0;\n    \n    // ✅ FIX: Push row for the 00h00 case\n    energyRows.push({ json: row });\n\n  } else if (hour > currentHour) {\n    // ✅ FIX: Future hours -> Push row to update forecasts\n    energyRows.push({ json: row });\n  }\n  \n  // ⛔ ELSE: On ne fait rien et on ne pousse PAS la ligne \n  // pour ne pas écraser l'existant avec des NULLs\n}\n\nreturn energyRows;"
+      },
+      "id": "f798a4b5-9b18-40c9-b69b-08a3b70b5ec2",
+      "name": "Formatage Data Table Energy",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1312,
+        416
+      ],
+      "typeVersion": 2,
+      "notes": "📦 Formate pour Data Table Energy:\n- Production/conso réelles (cumul jour)\n- Prévision jour + heure actuelle\n⚠️ Cherche prévision à l'heure actuelle, pas fin de journée"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iTqe8WKnm0cfsE1B",
+          "mode": "list",
+          "cachedResultName": "energy_hourly",
+          "cachedResultUrl": "/projects/HmXlcweiu5I7NsBE/datatables/iTqe8WKnm0cfsE1B"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "date",
+              "keyValue": "={{ $json.date }}"
+            },
+            {
+              "keyName": "hour",
+              "keyValue": "={{ $json.hour }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "date": "={{ $json.date }}",
+            "hour": "={{ $json.hour }}",
+            "produced_kwh": "={{ $json.produced_kwh }}",
+            "consumed_kwh": "={{ $json.consumed_kwh }}",
+            "imported_kwh": "={{ $json.imported_kwh }}",
+            "exported_kwh": "={{ $json.exported_kwh }}",
+            "autoconsumed_kwh": "={{ $json.autoconsumed_kwh }}",
+            "autosufficiency_pct": "={{ $json.autosufficiency_pct }}",
+            "autoconsumption_pct": "={{ $json.autoconsumption_pct }}",
+            "forecast_day_kwh": "={{ $json.forecast_day_kwh }}",
+            "forecast_hour_cumul_kwh": "={{ $json.forecast_hour_cumul_kwh }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "hour",
+              "displayName": "hour",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "produced_kwh",
+              "displayName": "produced_kwh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "consumed_kwh",
+              "displayName": "consumed_kwh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "imported_kwh",
+              "displayName": "imported_kwh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "exported_kwh",
+              "displayName": "exported_kwh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "autoconsumed_kwh",
+              "displayName": "autoconsumed_kwh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "autosufficiency_pct",
+              "displayName": "autosufficiency_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "autoconsumption_pct",
+              "displayName": "autoconsumption_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "forecast_day_kwh",
+              "displayName": "forecast_day_kwh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "forecast_hour_cumul_kwh",
+              "displayName": "forecast_hour_cumul_kwh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "bf1670a0-171f-46ea-85ef-5c4d193a47b9",
+      "name": "Écriture Data Table Energy",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        416
+      ],
+      "notes": "✏️ Écriture Data Table Energy (horodatage)\nRétention: 48h (purge auto après)"
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "iTqe8WKnm0cfsE1B",
+          "mode": "list",
+          "cachedResultName": "energy_hourly",
+          "cachedResultUrl": "/projects/HmXlcweiu5I7NsBE/datatables/iTqe8WKnm0cfsE1B"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "timestamp",
+              "condition": "lt",
+              "keyValue": "={{ $now.minus({ hours: 48 }).toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b4e10948-b681-42bb-86db-7be9b966e751",
+      "name": "Purge Energy > 48h",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        416
+      ],
+      "notes": "🗑️ Purge Energy > 24h\nSupprime automatiquement anciennes entrées\n✅ Calcul dynamique du timestamp (maintenant - 24h)"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Format data for energy_hourly Data Table\n * - 24 lignes (0–23)\n * - forecast_* : issus de forecast.solar\n * - *_kwh réels : issus d'APsystems (data.produced/consumed/imported/exported)\n * - champs calculés :\n *    autoconsumed_kwh     = produced_kwh - exported_kwh (>= 0)\n *    autosufficiency_pct  = autoconsumed_kwh / consumed_kwh * 100\n *    autoconsumption_pct  = autoconsumed_kwh / produced_kwh * 100\n */\n\nconst main = $input.first().json; // ton gros objet combiné\n\n// Données APsystems (arrays sur 24h)\nconst data = main.data || {};\nconst times = data.time || [];\nconst producedArr = data.produced || [];\nconst consumedArr = data.consumed || [];\nconst importedArr = data.imported || [];\nconst exportedArr = data.exported || [];\n\n// Prévisions forecast.solar\nconst hourlyForecastsAll = main.hourlyForecasts || [];\nconst dayForecasts = main.forecasts || [];\n\n// Récupérer l'heure actuelle en timezone Paris\nconst now = new Date();\nconst parisTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));\nconst utcTime = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));\nconst currentHour = parisTime.getHours();\nconst currentDate = parisTime.toISOString().split('T')[0];\n\n// Calcul du décalage horaire (Paris - UTC)\n// En hiver: Paris (UTC+1) - UTC = 1 heure\n// En été: Paris (UTC+2) - UTC = 2 heures\nconst offsetHours = Math.round((parisTime - utcTime) / 3600000);\n\n// Prévision du jour (totale)\nconst todayForecast = dayForecasts.find(f => f.date === currentDate);\nconst forecastDayKwh = todayForecast ? todayForecast.forecast_kwh : 0;\n\n// Prévisions horaires du jour\nconst hourlyForecasts = hourlyForecastsAll.filter(f => f.date === currentDate);\n\n// Timestamp : on reprend celui de la donnée, ou fallback sur maintenant\nconst timestamp = main.timestamp ||\n  new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Paris' }).replace(' ', 'T');\n\n// Petite utilitaire pour lire proprement un tableau\nfunction getNumericAt(arr, idx) {\n  if (!arr || idx < 0 || idx >= arr.length) return null;\n  const v = arr[idx];\n  if (v === null || v === undefined) return null;\n  const n = parseFloat(v);\n  return isNaN(n) ? null : n;\n}\n\nconst energyRows = [];\n\nfor (let hour = 0; hour < 24; hour++) {\n  // Forecast cumulée pour cette heure\n  const hourForecast = hourlyForecasts.find(f => {\n    const h = parseInt(f.time.split(':')[0], 10);\n    return h === hour;\n  });\n  const forecastHourCumulKwh = hourForecast ? hourForecast.forecast_kwh : 0;\n\n  const row = {\n    timestamp,\n    date: currentDate,\n    hour,\n    forecast_day_kwh: forecastDayKwh,\n    forecast_hour_cumul_kwh: forecastHourCumulKwh,\n  };\n\n  // Index dans les arrays APsystems (time = \"00\", \"01\", ..., \"23\")\n  // APsystems renvoie souvent les données en UTC, donc on doit compenser le décalage\n  let apiHour = hour - offsetHours;\n  \n  // Si apiHour < 0 (ex: 00h Paris = 23h UTC veille), on ne trouvera pas les données dans le tableau du jour\n  // Ce n'est pas grave pour le solaire (la nuit), mais on gère le cas proprement\n  const hourStr = apiHour >= 0 ? apiHour.toString().padStart(2, '0') : 'XX';\n  const idx = times.indexOf(hourStr);\n\n  // On ne met des données réelles que si on a un index valide et que l'heure est passée\n  if (idx !== -1 && hour <= currentHour) {\n    const produced_kwh = getNumericAt(producedArr, idx);\n    const consumed_kwh = getNumericAt(consumedArr, idx);\n    const imported_kwh = getNumericAt(importedArr, idx);\n    const exported_kwh = getNumericAt(exportedArr, idx);\n\n    if (produced_kwh != null) row.produced_kwh = produced_kwh;\n    if (consumed_kwh != null) row.consumed_kwh = consumed_kwh;\n    if (imported_kwh != null) row.imported_kwh = imported_kwh;\n    if (exported_kwh != null) row.exported_kwh = exported_kwh;\n\n    // autoconsommation en kWh (production utilisée sur place)\n    let autoconsumed_kwh = null;\n    if (produced_kwh != null && exported_kwh != null) {\n      let autoconsumed = produced_kwh - exported_kwh;\n      if (autoconsumed < 0) autoconsumed = 0;\n      autoconsumed_kwh = +autoconsumed.toFixed(6);\n      row.autoconsumed_kwh = autoconsumed_kwh;\n    }\n\n    // % d'autonomie = part de la conso couverte par la production locale\n    if (autoconsumed_kwh != null && consumed_kwh != null && consumed_kwh > 0) {\n      row.autosufficiency_pct = +((autoconsumed_kwh / consumed_kwh) * 100).toFixed(1);\n    }\n\n    // % d'autoconsommation = part de la production consommée sur place\n    if (autoconsumed_kwh != null && produced_kwh != null && produced_kwh > 0) {\n      row.autoconsumption_pct = +((autoconsumed_kwh / produced_kwh) * 100).toFixed(1);\n    }\n  } else if (hour <= currentHour && apiHour < 0) {\n    // FIX: Cas particulier 00h00 (Donnée manquante car sur J-1)\n    // On force à 0 pour éviter les NULLs\n    row.produced_kwh = 0;\n    row.consumed_kwh = 0;\n    row.imported_kwh = 0;\n    row.exported_kwh = 0;\n    row.autoconsumed_kwh = 0;\n    row.autosufficiency_pct = 0;\n    row.autoconsumption_pct = 0;\n  }\n  // ELSE: On ne fait rien (on laisse les champs absents pour ne pas écraser avec NULL)\n\n  energyRows.push({ json: row });\n}\n\nreturn energyRows;"
+      },
+      "id": "58eb4bae-579e-4466-a381-6f78ce9942d0",
+      "name": "Formatage Data Table Energy backup",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1280,
+        144
+      ],
+      "typeVersion": 2,
+      "disabled": true,
+      "notes": "📦 Formate pour Data Table Energy:\n- Production/conso réelles (cumul jour)\n- Prévision jour + heure actuelle\n⚠️ Cherche prévision à l'heure actuelle, pas fin de journée"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Préparation Date/Heure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparation Date/Heure": {
+      "main": [
+        [
+          {
+            "node": "Appel SUB APsystems",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Appel SUB Forecast Heure",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Appel SUB Forecast Jour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appel SUB APsystems": {
+      "main": [
+        [
+          {
+            "node": "Fusion Données",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appel SUB Forecast Heure": {
+      "main": [
+        [
+          {
+            "node": "Fusion Données",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Appel SUB Forecast Jour": {
+      "main": [
+        [
+          {
+            "node": "Fusion Données",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Fusion Données": {
+      "main": [
+        [
+          {
+            "node": "Formatage Data Table Energy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatage Data Table Energy": {
+      "main": [
+        [
+          {
+            "node": "Écriture Data Table Energy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Écriture Data Table Energy": {
+      "main": [
+        [
+          {
+            "node": "Purge Energy > 48h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timezone": "Europe/Paris"
+  },
+  "versionId": "1180b8cc-70b4-4dee-8e32-ac9fd52f52a3",
+  "meta": {
+    "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"
+  },
+  "id": "fbNRoWx41rt2EdOW",
+  "tags": []
+}

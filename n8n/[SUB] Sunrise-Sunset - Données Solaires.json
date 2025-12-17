@@ -1,0 +1,115 @@
+{
+  "name": "[SUB] Sunrise-Sunset - Données Solaires",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "uuid-trigger",
+      "name": "Appel depuis workflow parent",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        240,
+        304
+      ],
+      "typeVersion": 1,
+      "notes": "🔔 Trigger SUB-workflow\nAppelé par: Workflow B (1x/jour à 00h ou 01h)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Configuration centralisée\nconst SOLAR_CONFIG = {\n  latitude: 48.8782753,\n  longitude: 2.2268011,\n  declination: 5,\n  azimuth: 44,\n  power: 3.36,\n  timezone: 'Europe/Paris',\n  location: 'Suresnes, France'\n};\n\n// Récupérer la date demandée (si fournie par le parent)\nconst input = $input.first().json;\nconst requestedDate = input.date || new Date().toISOString().split('T')[0];\n\n// Construire l'URL sunrise-sunset.org\n// Format: /json?lat={lat}&lng={lng}&date={YYYY-MM-DD}\nconst url = `https://api.sunrise-sunset.org/json?lat=${SOLAR_CONFIG.latitude}&lng=${SOLAR_CONFIG.longitude}&date=${requestedDate}`;\n\nreturn [{\n  json: {\n    solarConfig: SOLAR_CONFIG,\n    requestedDate: requestedDate,\n    url: url\n  }\n}];"
+      },
+      "id": "uuid-config",
+      "name": "Configuration",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        464,
+        304
+      ],
+      "typeVersion": 2,
+      "notes": "⚙️ Config Sunrise-Sunset API\n📅 Input: date (YYYY-MM-DD) ou aujourd'hui\n🌅 API: sunrise-sunset.org (lever/coucher soleil)"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "uuid-http",
+      "name": "Requête Sunrise-Sunset",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        688,
+        304
+      ],
+      "typeVersion": 4.2,
+      "notes": "🌐 Requête Sunrise-Sunset API\nTimeout: 10s | Retourne heures en UTC"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst config = $('Configuration').item.json;\n\n// Vérifier la réponse API\nif (response.status !== 'OK') {\n  throw new Error(`Erreur Sunrise-Sunset API: ${response.status}`);\n}\n\nconst results = response.results || {};\n\n// Fonction pour convertir l'heure UTC en Europe/Paris\nfunction convertToLocalTime(utcTimeStr, date) {\n  // Format: \"7:00:24 AM\" en UTC\n  const [time, period] = utcTimeStr.split(' ');\n  const [hours, minutes, seconds] = time.split(':');\n  let hour = parseInt(hours);\n  \n  // Convertir en format 24h\n  if (period === 'PM' && hour !== 12) hour += 12;\n  if (period === 'AM' && hour === 12) hour = 0;\n  \n  // Créer une date UTC\n  const utcDate = new Date(`${date}T${String(hour).padStart(2, '0')}:${minutes}:${seconds}Z`);\n  \n  // Convertir en Europe/Paris\n  const localTime = utcDate.toLocaleString('sv-SE', { \n    timeZone: 'Europe/Paris',\n    hour: '2-digit',\n    minute: '2-digit',\n    second: '2-digit',\n    hour12: false\n  });\n  \n  return localTime;\n}\n\nconst date = config.requestedDate;\n\n// Convertir en timezone Europe/Paris\nconst timestamp = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Paris' }).replace(' ', 'T');\n\nconst output = {\n  timestamp: timestamp,\n  date: date,\n  sunrise: convertToLocalTime(results.sunrise, date),\n  sunset: convertToLocalTime(results.sunset, date),\n  solar_noon: convertToLocalTime(results.solar_noon, date),\n  day_length: results.day_length,\n  civil_twilight_begin: convertToLocalTime(results.civil_twilight_begin, date),\n  civil_twilight_end: convertToLocalTime(results.civil_twilight_end, date),\n  nautical_twilight_begin: convertToLocalTime(results.nautical_twilight_begin, date),\n  nautical_twilight_end: convertToLocalTime(results.nautical_twilight_end, date),\n  astronomical_twilight_begin: convertToLocalTime(results.astronomical_twilight_begin, date),\n  astronomical_twilight_end: convertToLocalTime(results.astronomical_twilight_end, date),\n  metadata: {\n    source: 'sunrise-sunset.org',\n    timezone: config.solarConfig.timezone,\n    location: config.solarConfig.location,\n    tzid: response.tzid || 'UTC'\n  }\n};\n\nreturn [{ json: output }];"
+      },
+      "id": "uuid-format",
+      "name": "Formatage Données",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        912,
+        304
+      ],
+      "typeVersion": 2,
+      "notes": "📦 Formatage réponse:\n1. Vérifie status = OK\n2. Convertit TOUTES les heures UTC → Europe/Paris\n3. Retourne lever/coucher + crépuscules\n⚠️ API retourne format 12h AM/PM, converti en 24h"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Appel depuis workflow parent": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuration": {
+      "main": [
+        [
+          {
+            "node": "Requête Sunrise-Sunset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Requête Sunrise-Sunset": {
+      "main": [
+        [
+          {
+            "node": "Formatage Données",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timezone": "Europe/Paris"
+  },
+  "versionId": "09af7ad9-238b-4c71-afdf-d7ca98bcf752",
+  "meta": {
+    "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"
+  },
+  "id": "tVfyjzJ6iOLe8WXT",
+  "tags": []
+}

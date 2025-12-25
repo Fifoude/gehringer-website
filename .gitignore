@@ -29,7 +29,7 @@ pnpm-debug.log*
 .tmp.driveupload/
 
 # n8n workflows (may contain hardcoded secrets)
-n8n/
+# n8n/
 
 # Some lacal files (may contain hardcoded secrets)
 SECURITY-NOTES.md

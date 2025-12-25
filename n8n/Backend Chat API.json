@@ -1,5 +1,5 @@
 {
-  "name": "Backend Chat API (Astro Integration)",
+  "name": "Backend Chat API",
   "nodes": [
     {
       "parameters": {
@@ -8,13 +8,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "607079fc-ce08-41f1-a097-b8cdcf9df830",
+      "id": "d797f36e-f8b9-4719-b5b6-bcad6107d764",
       "name": "Webhook (Entrée Unique)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -864,
-        0
+        -1552,
+        848
       ],
       "webhookId": "d41783e1-c8f6-4aba-bd51-5016acb5582a"
     },
@@ -42,26 +42,26 @@
           ]
         }
       },
-      "id": "a1b92604-3dc8-44b0-a426-d12f95124f7d",
+      "id": "65cd214f-8468-4f61-97d8-4fcf5069f225",
       "name": "Router (Switch Action)",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        -336,
-        -48
+        -1024,
+        800
       ]
     },
     {
       "parameters": {
         "jsCode": "const crypto = require('crypto');\n\n// 1. Générer un code à 4 chiffres (pour l'utilisateur)\nconst code = Math.floor(1000 + Math.random() * 9000).toString();\n\n// 2. Créer le hash du code (pour la base de données)\n// On utilise SHA-256 qui est robuste\nconst codeHash = crypto.createHash('sha256').update(code).digest('hex');\n\n// Récupération sécurisée de l'email\nconst body = $('Webhook (Entrée Unique)').first().json.body;\nconst email = body ? body.email : 'no-email-found';\n\nreturn {\n  email: email,\n  generated_code: code,      // NON-HASHÉ : À envoyer par email\n  code_hash: codeHash,       // HASHÉ : À stocker en DB\n  created_at: new Date().toISOString()\n};"
       },
-      "id": "becce18e-f3f7-48f1-9d7e-ddaad8a0df4b",
+      "id": "c6c9345e-1dee-4c65-a70c-23b76905664c",
       "name": "Générer Code OTP",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1408,
-        -416
+        720,
+        432
       ]
     },
     {
@@ -69,13 +69,13 @@
         "mode": "runOnceForEachItem",
         "jsCode": "const crypto = require('crypto');\n\n// 1. Récupération des inputs\nconst webhook = $('Webhook (Entrée Unique)').first().json;\nconst email = webhook.body.email;\nconst receivedCode = String(webhook.body.code).trim(); // Le '1234' tapé par l'utilisateur\n\n// 2. Données stockées (HASHÉES)\nconst storedHash = $json.code; // Attention: la colonne s'appelle toujours 'code' mais contient le hash\nconst storedDate = $json.created_at;\nconst rowId = $json.id;\n\nif (!storedHash) {\n  throw new Error(\"Aucun OTP trouvé pour cet email.\");\n}\n\n// 3. Vérification de l'expiration (5 min)\nconst EXPIRATION_MS = 5 * 60 * 1000;\nconst now = new Date().getTime();\nconst createdAt = new Date(storedDate).getTime();\n\nif (now - createdAt > EXPIRATION_MS) {\n  throw new Error(\"Code OTP expiré. Veuillez en demander un nouveau.\");\n}\n\n// 4. HASHAGE ET COMPARAISON\n// On hashe le code reçu pour voir s'il correspond au hash stocké\nconst receivedCodeHash = crypto.createHash('sha256').update(receivedCode).digest('hex');\n\nif (receivedCodeHash !== storedHash) {\n  throw new Error(\"Code OTP invalide.\");\n}\n\n// 5. Succès\nreturn {\n  email,\n  valid: true,\n  rowIdToDelete: rowId\n};"
       },
-      "id": "118ee0a6-ae67-4b17-a6dc-1c8e04bb5949",
+      "id": "20b9c4b6-51b9-4905-a7ae-d8bdc7cc6948",
       "name": "Vérifier Code (Mock)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1072,
-        -208
+        384,
+        640
       ],
       "onError": "continueErrorOutput"
     },
@@ -85,13 +85,13 @@
         "token": "={{ $('Webhook (Entrée Unique)').item.json.headers.authorization.split(' ')[1] }}",
         "options": {}
       },
-      "id": "df6d0768-127c-4c31-939d-cac7b7857f20",
+      "id": "d6538f68-b245-4d25-bd96-451fbf2ece8d",
       "name": "Sécurité (Vérifier JWT)",
       "type": "n8n-nodes-base.jwt",
       "typeVersion": 1,
       "position": [
-        -16,
-        624
+        -912,
+        1728
       ],
       "credentials": {
         "jwtAuth": {
@@ -108,13 +108,13 @@
         "binaryPropertyName": "audio",
         "options": {}
       },
-      "id": "67017386-f107-481a-b8a2-e95042dcaf6c",
+      "id": "90a665c6-9a83-4867-830e-8a1c619a8aa6",
       "name": "Whisper (STT)",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1,
       "position": [
-        688,
-        432
+        -96,
+        1408
       ],
       "credentials": {
         "openAiApi": {
@@ -128,13 +128,13 @@
       "parameters": {
         "options": {}
       },
-      "id": "d9422e89-aac0-4b77-a874-ca61904828e8",
+      "id": "ee7e4b0f-b219-4cc9-80fd-61aef134d796",
       "name": "Réponse Init",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1984,
-        -416
+        1296,
+        432
       ]
     },
     {
@@ -143,26 +143,26 @@
         "responseBody": "={{ \n  (() => {\n    // On cherche d'abord si la branche Login a produit quelque chose\n    let data = null;\n    try {\n        const loginItem = $('Générer Refresh Token').last(); \n        if (loginItem && loginItem.json && loginItem.json.accessToken) {\n            data = loginItem.json;\n        }\n    } catch (e) {}\n\n    // Si rien, on cherche dans la branche Refresh\n    if (!data) {\n        try {\n            const refreshItem = $('Générer Refresh Token 1').last();\n            if (refreshItem && refreshItem.json && refreshItem.json.accessToken) {\n                data = refreshItem.json;\n            }\n        } catch (e) {}\n    }\n\n    // Retourne le JSON stringifié (impératif pour ce champ)\n    if (data) {\n        return JSON.stringify({\n            accessToken: data.accessToken,\n            refreshToken: data.refreshToken\n        });\n    }\n    return JSON.stringify({ error: \"Tokens introuvables\" });\n  })()\n}}",
         "options": {}
       },
-      "id": "b79b1af1-2670-4617-9815-7f4510c6b635",
+      "id": "ccdb0f7e-f07d-48d9-ac08-884bd78bcc90",
       "name": "Réponse Token",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2192,
-        0
+        1504,
+        848
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "509c9366-8442-4a2f-b28a-a8cb4b75256d",
+      "id": "76111c16-5398-4a80-bdbe-00d49c3c8aff",
       "name": "Réponse Chat",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1888,
-        624
+        2048,
+        1712
       ]
     },
     {
@@ -180,10 +180,10 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        2176,
-        -416
+        1488,
+        432
       ],
-      "id": "c2eaab83-ee18-4ddb-8dee-0089e80543b7",
+      "id": "5a0586a3-4350-41cc-b940-db65c4a716a0",
       "name": "Send email",
       "webhookId": "25e76513-a504-43d5-9a46-87dc60e1b24a",
       "credentials": {
@@ -261,10 +261,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1584,
-        -416
+        896,
+        432
       ],
-      "id": "a1ac1318-15d7-41ba-af39-b16cc506c52d",
+      "id": "6d2468dc-7210-4660-aa85-3bc6020268fe",
       "name": "Sécu: Stocker Code"
     },
     {
@@ -290,10 +290,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        896,
-        -208
+        208,
+        640
       ],
-      "id": "b89f0354-7cfb-4d5a-bc9d-3a83f0c4b7a1",
+      "id": "438ff4c4-bfda-493d-84cf-7c35dbaff9b6",
       "name": "Get stored OTP code"
     },
     {
@@ -311,7 +311,7 @@
           "conditions": [
             {
               "keyName": "email",
-              "keyValue": "={{ $json.body.email }}"
+              "keyValue": "={{ $json.email }}"
             }
           ]
         }
@@ -319,10 +319,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1056,
-        -416
+        368,
+        432
       ],
-      "id": "a9af5ab6-92c5-47a4-8983-c295ceead384",
+      "id": "8830d52d-e2f8-46c6-a5dc-8492edb4fd53",
       "name": "Get CRM Contact",
       "alwaysOutputData": true,
       "notes": "Est-ce que l'email existe ?"
@@ -394,10 +394,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1232,
-        -416
+        544,
+        432
       ],
-      "id": "e883c8b2-f6a7-498d-9db7-f7d5b741a8fd",
+      "id": "67fabe05-1c43-4892-9252-ad9e5b4261e3",
       "name": "Update CRM",
       "notes": "Màj de CRM"
     },
@@ -408,10 +408,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        512,
-        432
+        -288,
+        1408
       ],
-      "id": "65407b8f-758b-49c5-9e83-a893b2820809",
+      "id": "25e42bcc-525c-414c-8589-4377a650a7c2",
       "name": "Code in JavaScript1"
     },
     {
@@ -423,10 +423,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3,
       "position": [
-        864,
-        624
+        1248,
+        1536
       ],
-      "id": "f773954f-0e6d-404e-bc5d-ca076553522f",
+      "id": "eeffecec-f26c-4c74-ad1e-a017db26a5e1",
       "name": "AI Agent",
       "onError": "continueErrorOutput"
     },
@@ -444,10 +444,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        864,
-        448
+        1248,
+        1344
       ],
-      "id": "56fc8bf3-71b2-4516-bb8d-a394448ba709",
+      "id": "75514fd6-99c3-4d14-84c5-f25187dfdd73",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -463,13 +463,13 @@
         "nodeCredentialType": "googleContactsOAuth2Api",
         "options": {}
       },
-      "id": "67e211e2-527e-4c6d-946f-e4ca2c343202",
+      "id": "bc2655db-750e-4114-be78-407b14e14ee5",
       "name": "Get All Groups",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        1312,
-        -16
+        624,
+        832
       ],
       "credentials": {
         "googleContactsOAuth2Api": {
@@ -499,13 +499,13 @@
         },
         "options": {}
       },
-      "id": "2a609d1c-5f7a-4bfb-be25-5a370d9d86da",
+      "id": "f31aec25-6e81-48ff-8da5-314ff82d216d",
       "name": "Check Google Contacts",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        1136,
-        -16
+        448,
+        832
       ],
       "alwaysOutputData": true,
       "retryOnFail": true,
@@ -521,13 +521,13 @@
       "parameters": {
         "jsCode": "const response = $('Check Google Contacts').first().json;\n// The API returns { results: [ { person: { ... } } ] }\n// If no results, 'results' is undefined or empty\nconst person = (response.results && response.results.length > 0) ? response.results[0].person : {};\n\nconst groups = $('Get All Groups').first().json.contactGroups || [];\n\n// Create Map: resourceName -> formattedName\nconst groupMap = {};\ngroups.forEach(g => {\n  groupMap[g.resourceName] = g.formattedName;\n});\n\n// Extract User Memberships (safe access)\nconst rawMemberships = person.memberships || [];\n\nconst labels = rawMemberships.map(m => {\n   const resName = m.contactGroupMembership ? m.contactGroupMembership.contactGroupResourceName : null;\n   return groupMap[resName] || resName;\n}).filter(l => l != null);\n\n// Fallback email if contact not found\n// Note: original email input is needed if person.emailAddresses is empty\nconst verifiedEmail = $('Vérifier Code (Mock)').first().json.email;\nconst googleEmail = (person.emailAddresses && person.emailAddresses.length > 0) ? person.emailAddresses[0].value : null;\n\nreturn {\n  email: googleEmail || verifiedEmail,\n  user_labels: labels\n};"
       },
-      "id": "ab741e30-9b81-4134-b902-59b6e1dcd7c2",
+      "id": "862e0d38-c4cb-4a2c-81ef-a6fe6a083861",
       "name": "Merge Groups Names",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1488,
-        -16
+        800,
+        832
       ],
       "onError": "continueRegularOutput"
     },
@@ -537,28 +537,15 @@
         "numberOutputs": 3,
         "output": "={{ ($('Webhook (Entrée Unique)').first().binary?.audio != null || ($('Webhook (Entrée Unique)').first().binary?.data?.mimeType?.startsWith('audio/') || false)) ? 0 : (($('Webhook (Entrée Unique)').first().binary?.file != null || $('Webhook (Entrée Unique)').first().binary?.data != null) ? 1 : 2) }}"
       },
-      "id": "fa43b519-89c3-475f-8ed7-9a0124a96f93",
+      "id": "401c868c-de35-47db-b16d-8deb7c3595cc",
       "name": "Router (Content Type)",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
       "position": [
-        336,
-        608
+        -528,
+        1488
       ],
       "notesInFlow": false
-    },
-    {
-      "parameters": {
-        "jsCode": "const inputBinary = $('Webhook (Entrée Unique)').first().binary;\nconst binary = inputBinary ? (inputBinary.file || inputBinary.data) : null;\nconst fileName = binary ? binary.fileName : 'unknown_file';\nconst fileType = binary ? binary.mimeType : 'unknown_type';\n\n// Placeholder: In a full implementation, this node would extract text from PDF/Docx\n// or pass the file to an RAG ingestion workflow.\n\nreturn [\n  {\n    json: {\n      text: `[SYSTEM] L'utilisateur a envoyé un fichier : \"${fileName}\" (${fileType}). ${$json.text ? 'Message accompagné : ' + $json.text : ''}`,\n      has_attachment: true,\n      attachment_name: fileName,\n      attachment_type: fileType\n    }\n  }\n];"
-      },
-      "id": "3deae9cd-3fda-44da-bf47-ce079a78bb59",
-      "name": "Process Document",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        512,
-        624
-      ]
     },
     {
       "parameters": {
@@ -583,25 +570,25 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1232,
-        -208
+        544,
+        640
       ],
-      "id": "50a16a21-dffe-4278-8599-bd2cca29ac97",
+      "id": "460a74cc-8ad3-49cc-8802-d757ec1417e9",
       "name": "Supprimé Code Utilisé"
     },
     {
       "parameters": {
         "useJson": true,
-        "claimsJson": "={\n  \"expiresIn\": 900,\n  \"email\": \"{{ $('Vérifier Code (Mock)').first().json.email }}\",\n  \"user_labels\": \"{{ $json.user_labels || [] }}\"\n}",
+        "claimsJson": "={\n  \"expiresIn\": 900,\n  \"email\": \"{{ $('Vérifier Code (Mock)').first().json.email }}\",\n  \"user_labels\": \"{{ $('Merge Groups Names').item.json.user_labels }}\"\n}",
         "options": {}
       },
-      "id": "a66859a8-d736-472a-91cc-fcb1f4173fd4",
+      "id": "a31bad8a-26dd-4bb2-8714-af1a77e39b4e",
       "name": "Générer Access Token",
       "type": "n8n-nodes-base.jwt",
       "typeVersion": 1,
       "position": [
-        1584,
-        -208
+        896,
+        640
       ],
       "notesInFlow": true,
       "credentials": {
@@ -619,10 +606,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1776,
-        -208
+        1088,
+        640
       ],
-      "id": "c1bb37ab-b14a-48b5-b514-88360411e0bb",
+      "id": "72f4520d-3559-4b00-938d-c737c3598104",
       "name": "Générer Refresh Token"
     },
     {
@@ -695,10 +682,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1984,
-        -208
+        1296,
+        640
       ],
-      "id": "607d7d55-0e63-4bc9-afe4-6b3b2f5147d5",
+      "id": "5d772c5c-5e64-4728-9f7c-00ceb72b8ac5",
       "name": "Sauvegarder Refresh Token"
     },
     {
@@ -790,10 +777,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1408,
-        -208
+        720,
+        640
       ],
-      "id": "96dcbe9e-c4d3-4bdd-92c4-e375d774635b",
+      "id": "bbee28bd-e9af-4931-a66b-b03198cf53e5",
       "name": "Log: Auth Success"
     },
     {
@@ -807,10 +794,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2176,
-        240
+        1488,
+        1088
       ],
-      "id": "4a3e003d-6e22-4fc8-9e0c-957b055f16c5",
+      "id": "6438eff2-b7d1-4474-abec-ffa7e780258c",
       "name": "Erreur Auth"
     },
     {
@@ -903,10 +890,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1984,
-        240
+        1296,
+        1088
       ],
-      "id": "7810dd5b-e6c3-4f58-9389-690be3ee9335",
+      "id": "be3fffed-1c67-416a-a7af-6deb6f1a23f3",
       "name": "Log: Auth Failed"
     },
     {
@@ -998,10 +985,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        144,
-        624
+        -704,
+        1504
       ],
-      "id": "f6efdce2-86f6-4b77-8d48-c2ad880fe726",
+      "id": "9d9539c0-4b8b-4563-83b9-0e91ab60a73a",
       "name": "Log: Chat Message"
     },
     {
@@ -1011,10 +998,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1792,
-        240
+        1104,
+        1088
       ],
-      "id": "c1b20fcb-d262-4173-9988-53dd9295cdd5",
+      "id": "935a72f5-fe01-43e1-8b39-87c3d7b1037c",
       "name": "Normaliseur d'Erreur"
     },
     {
@@ -1024,10 +1011,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -48,
-        224
+        -736,
+        1072
       ],
-      "id": "e6be36d9-617c-49f1-834f-9cf1bb785a8d",
+      "id": "0d20c489-00ba-43c1-9391-986295bbc505",
       "name": "Hash Incoming Token"
     },
     {
@@ -1053,10 +1040,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        112,
-        224
+        -576,
+        1072
       ],
-      "id": "a5252e7d-57fe-4d08-98ad-af2fd260ce5f",
+      "id": "2c7cc506-96c0-4cb8-8df6-f342dea789fd",
       "name": "Get Refresh Token Info",
       "alwaysOutputData": true
     },
@@ -1067,10 +1054,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        288,
-        224
+        -400,
+        1072
       ],
-      "id": "e6905f2c-4dbd-4c71-84b2-edf9a241f23e",
+      "id": "31211445-5d81-46f8-bb85-6fb8dd192ad9",
       "name": "Validate & Rotate"
     },
     {
@@ -1095,10 +1082,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        464,
-        224
+        -224,
+        1072
       ],
-      "id": "b6b57e6c-6956-4f80-abc4-a0c397383d4b",
+      "id": "6bdb6fae-259d-466e-83a9-4fc7f64ef2a4",
       "name": "Delete Old Token"
     },
     {
@@ -1107,13 +1094,13 @@
         "claimsJson": "={\n  \"expiresIn\": 900,\n  \"email\": \"{{ $json.email }}\",\n  \"user_labels\": \"{{ $json.user_labels || [] }}\"\n}",
         "options": {}
       },
-      "id": "1bb09809-7a56-4c01-a72a-860787d0f8f3",
+      "id": "8de16d09-5632-464b-8af6-2f0f56f4bd9a",
       "name": "Générer Access Token 1",
       "type": "n8n-nodes-base.jwt",
       "typeVersion": 1,
       "position": [
-        672,
-        224
+        -16,
+        1072
       ],
       "notesInFlow": true,
       "credentials": {
@@ -1131,10 +1118,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        864,
-        224
+        176,
+        1072
       ],
-      "id": "b3cd6dad-0cfa-4f01-9c91-d09fb3975abe",
+      "id": "83a7ffb4-63cd-449e-81b6-7ee719c08f71",
       "name": "Générer Refresh Token 1"
     },
     {
@@ -1205,10 +1192,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1072,
-        224
+        384,
+        1072
       ],
-      "id": "42ef9149-d68c-40e8-bce8-1714050dc666",
+      "id": "e0cea412-e9b4-4c7b-9c87-757ccb53dc4b",
       "name": "Sauvegarder Refresh Token 1"
     },
     {
@@ -1226,7 +1213,7 @@
           "conditions": [
             {
               "keyName": "email",
-              "keyValue": "={{ $json.body.email }}"
+              "keyValue": "={{ $json.email }}"
             },
             {
               "keyName": "action",
@@ -1238,10 +1225,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        -96,
-        -416
+        -784,
+        432
       ],
-      "id": "f8af0b6d-d5e0-4b5e-9481-2c2d32f1f5de",
+      "id": "7f9e3d6b-51e3-42f9-a83d-6cc7949f5e42",
       "name": "Get Rate Limit Init",
       "alwaysOutputData": true
     },
@@ -1252,10 +1239,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        80,
-        -416
+        -608,
+        432
       ],
-      "id": "8a23e2d0-a85f-48dc-a10d-8316e3374d0c",
+      "id": "9f7d6709-1842-4072-af90-169bce77d4d1",
       "name": "Check Limit Init"
     },
     {
@@ -1351,10 +1338,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        256,
-        -416
+        -432,
+        432
       ],
-      "id": "aa62709e-ec39-4f5f-9092-0963dc72523d",
+      "id": "dd9135e4-319e-4cdf-a4bd-886a6bdf0800",
       "name": "Update Rate Limit Init"
     },
     {
@@ -1372,7 +1359,7 @@
           "conditions": [
             {
               "keyName": "email",
-              "keyValue": "={{ $json.body.email }}"
+              "keyValue": "={{ $json.email }}"
             },
             {
               "keyName": "action",
@@ -1384,10 +1371,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        -96,
-        -192
+        -784,
+        656
       ],
-      "id": "3c5f7c69-b7de-4679-9944-7af628ed2ab1",
+      "id": "e7ca282b-5380-4597-a9d9-d89583369dae",
       "name": "Get Rate Limit Verify",
       "alwaysOutputData": true
     },
@@ -1398,10 +1385,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        80,
-        -192
+        -608,
+        656
       ],
-      "id": "8d9219ab-5135-404b-9d89-f36991880d49",
+      "id": "7441455d-d889-43ee-b8c7-e33dac247923",
       "name": "Check Limit Verify"
     },
     {
@@ -1497,10 +1484,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        256,
-        -192
+        -432,
+        656
       ],
-      "id": "450eed04-ac77-4198-b8b1-84b690117d31",
+      "id": "c1249ffd-1796-4eeb-b14a-d1e820fec95f",
       "name": "Update Rate Limit Verify"
     },
     {
@@ -1531,10 +1518,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        464,
-        -416
+        -224,
+        432
       ],
-      "id": "695bc1ef-572d-4088-b703-c7c3f761913b",
+      "id": "408bf7fc-31ad-4058-b448-6044d40f0526",
       "name": "Block or Pass"
     },
     {
@@ -1565,10 +1552,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        464,
-        -192
+        -224,
+        656
       ],
-      "id": "06d27868-e369-4d73-8145-63dc1d582105",
+      "id": "4cf41634-7d1b-4fd5-ae67-05282080e471",
       "name": "Block or Pass Verify"
     },
     {
@@ -1579,11 +1566,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -1104,
-        256
+        -1792,
+        1104
       ],
       "typeVersion": 1,
-      "id": "fcc01261-2ec6-4a28-8ea6-cb8ac5e8b62a",
+      "id": "ae2d7de0-4a4a-481f-bf2c-7547f42fb2fd",
       "name": "Sticky Note"
     },
     {
@@ -1593,10 +1580,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        688,
-        -432
+        0,
+        416
       ],
-      "id": "d4608612-1614-4ec8-bbcc-5cec9b84f6a5",
+      "id": "06ada840-bff9-4d3c-af42-e7f0ceb030f8",
       "name": "Throw Error",
       "onError": "continueErrorOutput"
     },
@@ -1607,10 +1594,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
-        -208
+        -16,
+        640
       ],
-      "id": "aed2c2da-a400-4c05-8b83-29c1bead4fad",
+      "id": "bf3a4126-7390-4f58-800f-b6c90dd3c221",
       "name": "Throw Error Verify",
       "onError": "continueErrorOutput"
     },
@@ -1621,11 +1608,226 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -624,
-        0
+        -1312,
+        848
       ],
-      "id": "4c125ad5-25dd-480b-9749-5db81a374a7e",
+      "id": "10b4106e-040c-48d0-acfc-9cbac783dc43",
       "name": "Input Validation",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Récupération du binaire depuis le Webhook initial\nconst webhookBinary = $('Webhook (Entrée Unique)').first().binary;\n\n// On vérifie s'il y a du binaire (peu importe la clé : file, data, attachment...)\nconst keys = Object.keys(webhookBinary || {});\nif (keys.length === 0) {\n  throw new Error(\"Erreur interne : Le fichier a été perdu en cours de route.\");\n}\n\n// On standardise la clé à 'data' pour le Subworkflow (Extract Text attend 'data' par défaut)\nconst binaryData = webhookBinary[keys[0]];\n\nreturn [{\n  json: items[0].json,\n  binary: {\n    data: binaryData\n  }\n}];"
+      },
+      "id": "948a553f-f59d-488f-a73e-4270bd4f7f09",
+      "name": "Restore Binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wc1gPl32rku4ikBN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/wc1gPl32rku4ikBN",
+          "cachedResultName": "Subworkflow - File Gatekeeper"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "id": "f82a24cc-e6d3-4189-809b-26ec66014cbe",
+      "name": "File Gatekeeper",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -96,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/generate",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "llama3.2"
+            },
+            {
+              "name": "prompt",
+              "value": "=Tu es un routeur intelligent spécialisé pour un assistant professionnel (Gehringer).\nAnalyse l'entrée utilisateur et décide si elle nécessite une recherche dans la base de connaissances (RAG) ou si c'est une simple discussion (CHAT).\n\nCRITÈRES DE DÉCISION :\n- INTENT \"rag\" : Uniquement si la question porte sur des aspects professionnels spécifiques comme :\n  - L'analyse d'un profil par rapport à un poste (matching).\n  - Des questions sur des missions, des offres d'emploi ou des opportunités.\n  - Une demande de CV ou de parcours professionnel.\n  - L'analyse du contenu d'un document joint.\n\n- INTENT \"chat\" : Pour tout le reste, y compris :\n  - Salutations (\"Bonjour\", \"Ça va ?\").\n  - Questions générales, culturelles ou météo (\"Quelle est la météo à Paris ?\").\n  - Discussions sans lien direct avec le recrutement ou les documents joints.\n\nContexte : {{$json.file_metadata ? 'Fichier joint' : 'Aucun fichier'}}\nEntrée : {{ $json.text || $json.ocr_text || $('Webhook (Entrée Unique)').item.json.body.text || $('Webhook (Entrée Unique)').item.json.body.message }}\n\nRéponds UNIQUEMENT au format JSON strict :\n{ \"intent\": \"rag\" | \"chat\", \"reason\": \"...\" }"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "stream",
+              "value": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0f1289dd-adb8-487d-9ec1-fd5836e70019",
+      "name": "Router Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        160,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Context Merger: Récupère les données éparpillées pour l'IA\nconst ollama = $node[\"Router Ollama\"].json;\nconst intentResponse = JSON.parse(ollama.response || \"{}\");\n\n// Nodes fixes (toujours exécutés)\nconst webhook = $(\"Webhook (Entrée Unique)\");\nconst contacts = $(\"Sécurité (Vérifier JWT)\");\n\n// --- DETECTION DU CHEMIN ---\nconst binary = webhook.first().binary || {};\nconst hasAudioKey = binary.audio != null;\nconst hasDataKey = binary.data != null;\nconst mimeType = (hasDataKey && binary.data.mimeType) ? binary.data.mimeType : \"\";\n\nconst isAudio = hasAudioKey || mimeType.startsWith('audio/');\nconst isFile = !isAudio && (binary.file != null || hasDataKey);\n\n// --- RECUPERATION SECURISEE ---\nlet gatekeeper = null;\nlet stt = null;\n\nif (isFile) {\n   try { gatekeeper = $(\"File Gatekeeper\"); } catch(e) {}\n}\n\nif (isAudio) {\n   try { stt = $(\"Whisper (STT)\"); } catch(e) {}\n}\n\n// --- SYNTHÈSE DU TEXTE (COMBINAISON) ---\n\n// 1. Message de l'utilisateur (Direct ou Audio)\nlet userInstructions = \"\";\ntry { \n  userInstructions = webhook.first().json.body.message || webhook.first().json.body.text || \"\"; \n} catch(e) {}\n\nif (!userInstructions && stt && stt.first()) {\n  try { userInstructions = stt.first().json.text; } catch(e) {}\n}\n\n// 2. Contenu du fichier\nlet fileContent = \"\";\nif (gatekeeper && gatekeeper.first()) {\n    try { fileContent = gatekeeper.first().json.text; } catch(e) {}\n}\n\n// 3. Construction des inputs pour l'IA\n// Pour l'AI Agent (Chat classique) : On combine tout pour qu'il ait le contexte complet\nlet fullPrompt = userInstructions;\nif (fileContent) {\n  fullPrompt += \"\\n\\n--- CONTENU DU FICHIER JOINT ---\\n\" + fileContent;\n}\n\n// Si vraiment tout est vide, on met un fallback\nif (!fullPrompt && !fileContent) {\n  fullPrompt = \"Bonjour\";\n}\n\n// --- RÉCUPÉRATION DES RÉSERVES (Metadata / Labels) ---\nconst fileMeta = (gatekeeper && gatekeeper.first()) ? gatekeeper.first().json.file_metadata : null;\n\nlet userLabels = [\"public\"];\ntry {\n  const payload = contacts.first().json.payload;\n  if (payload && payload.user_labels) {\n    userLabels = payload.user_labels;\n    if (typeof userLabels === 'string') userLabels = userLabels.split(',');\n  }\n} catch(e) {}\n\n// --- RÉCUPÉRATION DE L'EMAIL ---\nconst email = contacts.first().json.payload.email; // Récupéré du JWT\n\nreturn [{\n  json: {\n    intent: intentResponse.intent || \"chat\",\n    reason: intentResponse.reason || \"Default\",\n    text: fullPrompt, // Utilisé par l'AI Agent (Complet : Instructions + PDF)      \n    chatInput: userInstructions || \"Analyse du document\", // Utilisé par le RAG (Ta question uniquement)\n    file_metadata: fileMeta,\n    email: email // <--- On ajoute l'email ici\n  }\n}];"
+      },
+      "id": "562a4dde-c2b0-4658-a191-f99de9e1116a",
+      "name": "Context Merger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.intent }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "chat"
+            },
+            {
+              "value2": "rag",
+              "output": 1
+            }
+          ]
+        }
+      },
+      "id": "a89d4fea-95ac-4f92-a506-5253780cb308",
+      "name": "Router (Switch Intent)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        608,
+        1552
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Yw18E2lgZziMH8uX",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Yw18E2lgZziMH8uX",
+          "cachedResultName": "Unified RAG Chat & PDF Generator"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "id": "ece14a36-c629-45e5-9664-815ec4a39149",
+      "name": "Workflow RAG",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        1808
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.pdf_generated }}",
+                    "rightValue": "=true",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "06a82771-4192-426f-85c9-bccc1481b395"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1312,
+        1792
+      ],
+      "id": "67614a42-da47-4cbd-9147-771c0b86c380",
+      "name": "Is PDF?"
+    },
+    {
+      "parameters": {
+        "fromEmail": "contact@gehringer.fr",
+        "toEmail": "={{ $('Router (Switch Intent)').item.json.email }}",
+        "subject": "Votre document Gehringer Conseil",
+        "html": "=Bonjour,\n\nBonjour, veuillez trouver ci-joint votre document...\nMerci !",
+        "options": {
+          "appendAttribution": false,
+          "attachments": "data",
+          "bccEmail": "philippe.lakas@gmail.com",
+          "replyTo": "web.contact@gehringer.fr"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1568,
+        1712
+      ],
+      "id": "dc31ff01-53c0-42cf-ad68-ad42d3c9ded2",
+      "name": "Send email1",
+      "webhookId": "25e76513-a504-43d5-9a46-87dc60e1b24a",
+      "credentials": {
+        "smtp": {
+          "id": "IpKC6W2ftYil9cca",
+          "name": "SMTP account"
+        }
+      },
       "onError": "continueErrorOutput"
     }
   ],
@@ -1769,7 +1971,7 @@
       "main": [
         [
           {
-            "node": "AI Agent",
+            "node": "Router Ollama",
             "type": "main",
             "index": 0
           }
@@ -1911,17 +2113,6 @@
         ]
       ]
     },
-    "Process Document": {
-      "main": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Router (Content Type)": {
       "main": [
         [
@@ -1933,14 +2124,25 @@
         ],
         [
           {
-            "node": "Process Document",
+            "node": "Restore Binary",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "AI Agent",
+            "node": "Router Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Binary": {
+      "main": [
+        [
+          {
+            "node": "File Gatekeeper",
             "type": "main",
             "index": 0
           }
@@ -2131,8 +2333,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Update Rate Limit Init": {
@@ -2165,8 +2366,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Update Rate Limit Verify": {
@@ -2270,9 +2470,102 @@
         ]
       ]
     },
-    "Réponse Token": {
+    "File Gatekeeper": {
       "main": [
-        []
+        [
+          {
+            "node": "Router Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router Ollama": {
+      "main": [
+        [
+          {
+            "node": "Context Merger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Context Merger": {
+      "main": [
+        [
+          {
+            "node": "Router (Switch Intent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router (Switch Intent)": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Workflow RAG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow RAG": {
+      "main": [
+        [
+          {
+            "node": "Is PDF?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is PDF?": {
+      "main": [
+        [
+          {
+            "node": "Send email1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Réponse Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email1": {
+      "main": [
+        [
+          {
+            "node": "Réponse Chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normaliseur d'Erreur",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -2282,7 +2575,7 @@
     "availableInMCP": true,
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "2ee12524-89e7-4568-825e-4da24fe26da4",
+  "versionId": "f8da5b15-ec66-45fd-a608-fb76651eb16e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"

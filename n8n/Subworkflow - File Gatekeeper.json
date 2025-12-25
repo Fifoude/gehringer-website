@@ -1,0 +1,243 @@
+{
+  "name": "Subworkflow - File Gatekeeper",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Configuration des règles\nconst MAX_SIZE_MB = 10;\nconst ALLOWED_MIME_TYPES = [\n  'application/pdf',\n  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',\n  'text/plain',\n  'text/csv',\n  'text/markdown'\n];\n\n// Récupération du fichier\nconst binaryKeys = Object.keys(items[0].binary || {});\nif (binaryKeys.length === 0) {\n  throw new Error(\"Security: No file detected.\");\n}\n\nconst fileKey = binaryKeys[0];\nconst file = items[0].binary[fileKey];\n\nconst fileSizeMB = file.fileSize / (1024 * 1024);\nif (fileSizeMB > MAX_SIZE_MB) {\n  throw new Error(`Security: File too large (${fileSizeMB.toFixed(2)}MB). Max allowed is ${MAX_SIZE_MB}MB.`);\n}\n\nif (!ALLOWED_MIME_TYPES.includes(file.mimeType)) {\n  throw new Error(`Security: Unsupported file format (${file.mimeType}).`);\n}\n\n// Metadonnées\nitems[0].json.file_metadata = {\n  type: file.mimeType,\n  name: file.fileName,\n  size_mb: fileSizeMB\n};\n\nreturn items;"
+      },
+      "id": "82a8f604-0bf6-4ef3-ba81-a9cfd8d2e2b3",
+      "name": "Security & Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.file_metadata.type }}",
+              "value2": "application/pdf"
+            }
+          ]
+        }
+      },
+      "id": "df55ac66-166f-4b10-af40-29868b653ff2",
+      "name": "Is PDF?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "6fed63dc-e51c-4734-a072-aa87b1ccfb73",
+      "name": "Extract PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "id": "26d8d29c-8192-4141-a001-2933a3d37aea",
+      "name": "Extract Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        0,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Récupère le texte extrait par les nœuds précédents (Extract PDF ou Extract Text)\nconst text = items[0].json.text || \"\";\n\n// Logique existante de détection de bruit (inchangée)\nconst isBinaryJunk = text.startsWith('PK\\u0003\\u0004') || text.includes('%PDF-');\n\nif (!text || text.length < 10 || isBinaryJunk) {\n  items[0].json.ocr_required = true;\n} else {\n  items[0].json.ocr_required = false;\n}\n\n// --- FIX : RESTAURATION DES METADONNÉES ---\ntry {\n  // On va chercher les infos dans le nœud \"Security & Validation\" qui s'est exécuté avant\n  const securityNode = $(\"Security & Validation\");\n  \n  // Si on trouve les données, on les réinjecte dans l'item courant\n  if (securityNode && securityNode.first() && securityNode.first().json.file_metadata) {\n     items[0].json.file_metadata = securityNode.first().json.file_metadata;\n  }\n} catch (e) {\n  // Si ça échoue, on ne bloque pas le flux, mais on loggue si besoin\n  // console.log(\"Métadonnées non trouvées\");\n}\n\nreturn items;"
+      },
+      "id": "bb9ebca1-5a1b-4cbd-9282-bec10583d8a8",
+      "name": "Quality Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.ocr_required }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "106d0c72-6cd7-4ba8-bc04-afd657d03417",
+      "name": "Need OCR?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        464,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "Format non supporté ou OCR nécessaire. Veuillez uploader un PDF avec couche texte."
+      },
+      "id": "ce66d5fb-bf13-4f72-80e9-311e8ccd6bce",
+      "name": "OCR Error",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        688,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "cea84d1d-9d3f-4f64-bcdd-a5605a2da32e",
+      "name": "Finalize",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        944,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -656,
+        128
+      ],
+      "id": "e27d14a5-3766-4387-a86b-3ddf1c8ccd87",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Security & Validation": {
+      "main": [
+        [
+          {
+            "node": "Is PDF?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is PDF?": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF": {
+      "main": [
+        [
+          {
+            "node": "Quality Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text": {
+      "main": [
+        [
+          {
+            "node": "Quality Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Check": {
+      "main": [
+        [
+          {
+            "node": "Need OCR?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Need OCR?": {
+      "main": [
+        [
+          {
+            "node": "OCR Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Security & Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "78c4052e-eeca-4c32-adf2-0f0b34d7594a",
+  "meta": {
+    "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"
+  },
+  "id": "wc1gPl32rku4ikBN",
+  "tags": []
+}

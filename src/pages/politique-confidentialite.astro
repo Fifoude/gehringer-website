@@ -1,22 +1,31 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { siteInfo } from '../config/siteInfo';
-import ServicesContent from '../content/services.md';
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { siteInfo } from "../config/siteInfo";
 ---
-<Layout title="Politique de confidentialité – Gehringer Conseil" description="Politique de confidentialité et protection des données personnelles de Gehringer Conseil.">
+
+<Layout
+  title="Politique de confidentialité – Gehringer Conseil"
+  description="Politique de confidentialité et protection des données personnelles de Gehringer Conseil."
+>
   <Header slot="header" />
-    <section class="max-w-5xl mx-auto px-6 py-16 text-gray-700">
+  <section class="max-w-5xl mx-auto px-6 py-16 text-gray-700">
     <h1 class="font-logo text-5xl text-center text-gray-900 mb-12">
       Politique de confidentialité
     </h1>
 
     <!-- Introduction -->
-    <p class="text-center text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-      La présente politique de confidentialité décrit la manière dont <strong>Gehringer Conseil</strong>
-      traite les informations personnelles collectées via ce site internet,
-      en conformité avec le <strong>Règlement Général sur la Protection des Données (RGPD)</strong>.
+    <p
+      class="text-center text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
+    >
+      La présente politique de confidentialité décrit la manière dont <strong
+        >Gehringer Conseil</strong
+      >
+      traite les informations personnelles collectées via ce site internet, en conformité
+      avec le <strong
+        >Règlement Général sur la Protection des Données (RGPD)</strong
+      >.
     </p>
 
     <!-- 1. Responsable du traitement -->
@@ -24,22 +33,33 @@ import ServicesContent from '../content/services.md';
     <p class="mb-8 leading-relaxed">
       Le responsable du traitement des données est :
       <br />
-      <strong>Philippe Gehringer</strong> — Gehringer Conseil  
+      <strong>Philippe Gehringer</strong> — Gehringer Conseil
       <br />
-      Email : <a href={`mailto:${siteInfo.email}`} class="underline hover:text-slate-900 transition">{siteInfo.email}</a> 
+      Email : <a
+        href={`mailto:${siteInfo.email}`}
+        class="underline hover:text-slate-900 transition">{siteInfo.email}</a
+      >
     </p>
 
     <!-- 2. Données collectées -->
     <h2 class="text-2xl font-semibold mb-3">2. Données collectées</h2>
     <p class="mb-8 leading-relaxed">
-      Le site <strong>gehringer.fr</strong> ne collecte des données personnelles que dans les cas suivants :
+      Le site <strong>gehringer.fr</strong> ne collecte des données personnelles que
+      dans les cas suivants :
     </p>
     <ul class="list-disc pl-6 mb-8 space-y-2">
-      <li>Lorsque vous utilisez le <strong>formulaire de contact</strong> (nom, adresse email, message) ;</li>
-      <li>Lorsque vous communiquez volontairement vos informations par email ou via LinkedIn.</li>
+      <li>
+        Lorsque vous utilisez le <strong>formulaire de contact</strong> (nom, adresse
+        email, message) ;
+      </li>
+      <li>
+        Lorsque vous communiquez volontairement vos informations par email ou
+        via LinkedIn.
+      </li>
     </ul>
     <p class="mb-8 leading-relaxed">
-      Aucune donnée sensible (origine ethnique, opinions politiques, santé, etc.) n’est collectée.
+      Aucune donnée sensible (origine ethnique, opinions politiques, santé,
+      etc.) n’est collectée.
     </p>
 
     <!-- 3. Finalité du traitement -->
@@ -49,7 +69,9 @@ import ServicesContent from '../content/services.md';
     </p>
     <ul class="list-disc pl-6 mb-8 space-y-2">
       <li>Répondre à vos demandes via le formulaire de contact ;</li>
-      <li>Vous recontacter pour une proposition ou un échange professionnel ;</li>
+      <li>
+        Vous recontacter pour une proposition ou un échange professionnel ;
+      </li>
       <li>Assurer le suivi administratif de vos demandes le cas échéant.</li>
     </ul>
 
@@ -57,22 +79,27 @@ import ServicesContent from '../content/services.md';
     <h2 class="text-2xl font-semibold mb-3">4. Base légale du traitement</h2>
     <p class="mb-8 leading-relaxed">
       Le traitement repose sur votre <strong>consentement explicite</strong>,
-      donné lorsque vous soumettez le formulaire ou envoyez un message volontairement.
+      donné lorsque vous soumettez le formulaire ou envoyez un message
+      volontairement.
     </p>
 
     <!-- 5. Durée de conservation -->
     <h2 class="text-2xl font-semibold mb-3">5. Durée de conservation</h2>
     <p class="mb-8 leading-relaxed">
-      Les données transmises via le formulaire de contact sont conservées pour une durée maximale de
-      <strong>12 mois</strong>, puis supprimées automatiquement, sauf relation contractuelle prolongée.
+      Les données transmises via le formulaire de contact sont conservées pour
+      une durée maximale de
+      <strong>12 mois</strong>, puis supprimées automatiquement, sauf relation
+      contractuelle prolongée.
     </p>
 
     <!-- 6. Partage des données -->
-    <h2 class="text-2xl font-semibold mb-3">6. Partage et hébergement des données</h2>
+    <h2 class="text-2xl font-semibold mb-3">
+      6. Partage et hébergement des données
+    </h2>
     <p class="mb-8 leading-relaxed">
-      Aucune donnée n’est partagée ou vendue à des tiers.  
-      Les formulaires sont hébergés et traités via la plateforme <strong>Netlify</strong>, qui applique des
-      mesures conformes au RGPD pour la gestion des formulaires.
+      Aucune donnée n’est partagée ou vendue à des tiers. Les formulaires sont
+      hébergés et traités via la plateforme <strong>Netlify</strong>, qui
+      applique des mesures conformes au RGPD pour la gestion des formulaires.
     </p>
 
     <!-- 7. Droits des utilisateurs -->
@@ -87,30 +114,37 @@ import ServicesContent from '../content/services.md';
     </ul>
     <p class="mb-8 leading-relaxed">
       Vous pouvez exercer ces droits en envoyant un message à :
-      <a href={`mailto:${siteInfo.email}`} class="underline hover:text-slate-900 transition">{siteInfo.email}</a>.
+      <a
+        href={`mailto:${siteInfo.email}`}
+        class="underline hover:text-slate-900 transition">{siteInfo.email}</a
+      >.
     </p>
 
     <!-- 8. Sécurité des données -->
     <h2 class="text-2xl font-semibold mb-3">8. Sécurité des données</h2>
     <p class="mb-8 leading-relaxed">
-      Des mesures techniques et organisationnelles sont mises en œuvre pour protéger vos données
-      contre tout accès, perte ou modification non autorisée.
+      Des mesures techniques et organisationnelles sont mises en œuvre pour
+      protéger vos données contre tout accès, perte ou modification non
+      autorisée.
     </p>
 
     <!-- 9. Cookies -->
     <h2 class="text-2xl font-semibold mb-3">9. Cookies</h2>
     <p class="mb-8 leading-relaxed">
-      Le site <strong>gehringer.fr</strong> ne dépose aucun cookie de suivi ou de publicité.
-      Seuls les cookies strictement nécessaires au fonctionnement du site peuvent être utilisés
-      (par exemple, liés à l’hébergement ou à la sécurité).
+      Le site <strong>gehringer.fr</strong> ne dépose aucun cookie de suivi ou de
+      publicité. Seuls les cookies strictement nécessaires au fonctionnement du site
+      peuvent être utilisés (par exemple, liés à l’hébergement ou à la sécurité).
     </p>
 
     <!-- 10. Contact -->
     <h2 class="text-2xl font-semibold mb-3">10. Contact</h2>
     <p class="mb-8 leading-relaxed">
-      Pour toute question relative à la confidentialité ou à vos données personnelles,
-      vous pouvez écrire à :
-      <a href={`mailto:${siteInfo.email}`} class="underline hover:text-slate-900 transition">{siteInfo.email}</a>.
+      Pour toute question relative à la confidentialité ou à vos données
+      personnelles, vous pouvez écrire à :
+      <a
+        href={`mailto:${siteInfo.email}`}
+        class="underline hover:text-slate-900 transition">{siteInfo.email}</a
+      >.
     </p>
 
     <!-- Bouton retour -->

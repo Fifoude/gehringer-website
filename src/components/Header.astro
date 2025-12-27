@@ -3,11 +3,14 @@ const currentPath = Astro.url.pathname;
 ---
 
 <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
-  <div class="max-w-5xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0">
+  <div
+    class="max-w-5xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0"
+  >
     <!-- Logo / Titre -->
     <a href="/" class="flex items-baseline space-x-2">
       <span class="font-logo text-2xl leading-none">Gehringer</span>
-      <span class="text-sm uppercase tracking-wide text-slate-300">Conseil</span>
+      <span class="text-sm uppercase tracking-wide text-slate-300">Conseil</span
+      >
     </a>
 
     <!-- Navigation -->
@@ -15,31 +18,35 @@ const currentPath = Astro.url.pathname;
       <a
         href="/"
         class={`hover:text-slate-300 transition ${
-          currentPath === '/' ? 'text-amber-400 underline' : ''
+          currentPath === "/" ? "text-amber-400 underline" : ""
         }`}
       >
         Accueil
       </a>
       <a
-        href="/services"
+        href="/situations-intervention"
         class={`hover:text-slate-300 transition ${
-          currentPath === '/services' ? 'text-amber-400 underline' : ''
+          currentPath === "/situations-intervention"
+            ? "text-amber-400 underline"
+            : ""
         }`}
       >
-        Services
+        Interventions
       </a>
       <a
-        href="/parcours"
+        href="/approche-experience"
         class={`hover:text-slate-300 transition ${
-          currentPath === '/parcours' ? 'text-amber-400 underline' : ''
+          currentPath === "/approche-experience"
+            ? "text-amber-400 underline"
+            : ""
         }`}
       >
-        Parcours
+        Approche
       </a>
       <a
         href="/contact"
         class={`hover:text-slate-300 transition ${
-          currentPath === '/contact' ? 'text-amber-400 underline' : ''
+          currentPath === "/contact" ? "text-amber-400 underline" : ""
         }`}
       >
         Contact

@@ -1,0 +1,470 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<Layout
+  title="Approche & Expérience — Gehringer Conseil"
+  description="Découvrez la posture et l'expérience de Philippe Gehringer : un management de transition pragmatique, ancré dans l'action et la responsabilité."
+>
+  <Header slot="header" />
+
+  <main class="overflow-hidden">
+    <!-- Hero / Introduction -->
+    <section class="relative pt-20 pb-16 md:pt-32 md:pb-24 bg-slate-50">
+      <div class="max-w-5xl mx-auto px-6 relative z-10">
+        <div
+          class="inline-block p-2 px-4 rounded-full bg-slate-200/50 text-slate-600 text-xs font-bold uppercase tracking-widest mb-6 animate-fade-in"
+        >
+          Posture & Vision
+        </div>
+        <h1
+          class="text-4xl md:text-6xl font-bold text-slate-900 mb-8 leading-tight"
+        >
+          Une posture <span class="text-slate-500 italic font-serif">avant</span
+          > une méthode
+        </h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+          <div class="space-y-6 text-xl text-slate-600 leading-relaxed">
+            <p>
+              Je n’interviens pas comme un consultant extérieur chargé
+              d’analyser une situation à distance.
+            </p>
+            <p class="text-slate-900 font-medium">
+              J’interviens comme <span
+                class="bg-slate-900 text-white px-2 py-0.5 rounded"
+                >manager de transition</span
+              >, avec une responsabilité claire : aider les dirigeants à <strong
+                >reprendre la maîtrise</strong
+              > dans des contextes complexes.
+            </p>
+          </div>
+          <div
+            class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100"
+          >
+            <h3
+              class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6"
+            >
+              Mon rôle consiste à :
+            </h3>
+            <ul class="space-y-4">
+              {
+                [
+                  "Comprendre rapidement la réalité du terrain",
+                  "Clarifier ce qui est réellement en jeu",
+                  "Prendre des décisions quand l’organisation hésite",
+                  "Remettre de la cohérence globale",
+                ].map((item) => (
+                  <li class="flex items-start gap-3 text-slate-700 font-medium">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="text-slate-400 mt-1"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>{item}</span>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div
+        class="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-slate-100/50 to-transparent pointer-events-none"
+      >
+      </div>
+    </section>
+
+    <!-- Expérience de direction -->
+    <section class="py-24 bg-white">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="flex flex-col md:flex-row gap-16 items-center">
+          <div class="flex-1 order-2 md:order-1">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100">
+                <div class="text-3xl font-bold text-slate-900 mb-1">30+</div>
+                <div class="text-sm text-slate-500 uppercase tracking-wide">
+                  Années d'expérience
+                </div>
+              </div>
+              <div class="p-6 rounded-2xl bg-slate-900 text-white">
+                <div class="text-3xl font-bold mb-1">Direction</div>
+                <div class="text-sm opacity-70 uppercase tracking-wide">
+                  Régionale & Opérationnelle
+                </div>
+              </div>
+              <div
+                class="p-6 rounded-2xl bg-slate-50 border border-slate-100 col-span-2"
+              >
+                <div class="text-xl font-bold text-slate-900 mb-1">
+                  Centres de profit
+                </div>
+                <div class="text-sm text-slate-500">
+                  Gestion et redressement de performance
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex-1 order-1 md:order-2">
+            <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
+              Une expérience de direction, pas un parcours théorique
+            </h2>
+            <p class="text-lg text-slate-600 leading-relaxed mb-6">
+              Mon expérience s’est construite au cœur d’organisations
+              opérationnelles, avec des responsabilités de direction et des
+              enjeux concrets de performance.
+            </p>
+            <p class="text-lg text-slate-600 leading-relaxed italic">
+              "Ces expériences m’ont confronté à des situations où il fallait
+              décider, parfois rapidement, toujours avec des conséquences
+              réelles."
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Situations complexes -->
+    <section class="py-24 bg-slate-900 text-white overflow-hidden relative">
+      <div class="max-w-5xl mx-auto px-6 relative z-10">
+        <h2 class="text-3xl md:text-5xl font-bold mb-12 text-center">
+          Situations complexes déjà gérées
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {
+            [
+              {
+                title: "Performance & Tension",
+                desc: "Organisations en perte de vitesse ou sous forte pression opérationnelle.",
+              },
+              {
+                title: "Croissance & Pilotage",
+                desc: "Phases de réorganisation nécessitant un cadrage et un pilotage renforcé.",
+              },
+              {
+                title: "Multi-sites & Équipes",
+                desc: "Gestion d'environnements complexes avec des enjeux humains répartis.",
+              },
+              {
+                title: "Transformations",
+                desc: "Impactant à la fois les processus, les outils numériques et la culture d'équipe.",
+              },
+            ].map((item) => (
+              <div class="p-8 rounded-3xl bg-slate-800 border border-slate-700 hover:bg-slate-700 transition duration-300">
+                <h3 class="text-xl font-bold mb-3">{item.title}</h3>
+                <p class="text-slate-400 leading-relaxed">{item.desc}</p>
+              </div>
+            ))
+          }
+        </div>
+        <p class="mt-12 text-center text-slate-500 font-medium">
+          Mon rôle : rétablir des priorités claires, sécuriser l’exécution et
+          accompagner dans la durée.
+        </p>
+      </div>
+      <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-slate-800 rounded-full blur-[120px] opacity-20 -z-0"
+      >
+      </div>
+    </section>
+
+    <!-- Principes de management -->
+    <section class="py-24 bg-white">
+      <div class="max-w-5xl mx-auto px-6">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            Une approche pragmatique
+          </h2>
+          <div class="h-1 w-20 bg-slate-900 mx-auto"></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {
+            [
+              {
+                title: "Terrain",
+                desc: "Être présent au plus près des équipes.",
+              },
+              { title: "Faits", desc: "Privilégier la réalité aux discours." },
+              {
+                title: "Complexité",
+                desc: "Accepter sans subir, simplifier l'action.",
+              },
+              {
+                title: "Action",
+                desc: "Décider avec discernement, agir vite.",
+              },
+            ].map((item) => (
+              <div class="text-center group">
+                <div class="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-6 group-hover:bg-slate-900 group-hover:text-white transition duration-300">
+                  <span class="font-logo text-2xl">{item.title[0]}</span>
+                </div>
+                <h4 class="font-bold text-slate-900 mb-2">{item.title}</h4>
+                <p class="text-sm text-slate-500 leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            ))
+          }
+        </div>
+        <div
+          class="mt-16 p-8 bg-slate-50 rounded-3xl border border-slate-100 text-center"
+        >
+          <p class="text-xl text-slate-700 italic">
+            "Le management est un équilibre permanent entre exigence, écoute et
+            responsabilité."
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Technologie & IA -->
+    <section class="py-24 bg-slate-50">
+      <div class="max-w-5xl mx-auto px-6">
+        <div class="flex flex-col md:flex-row gap-16 items-center">
+          <div class="flex-1">
+            <h2 class="text-3xl font-bold text-slate-900 mb-6">
+              Technologie & IA : un usage maîtrisé
+            </h2>
+            <p class="text-lg text-slate-600 leading-relaxed mb-8">
+              La technologie est un outil pour mobiliser l'organisation
+              lorsqu'elle apporte un bénéfice réel.
+            </p>
+            <ul class="space-y-4">
+              {
+                [
+                  "Fiabiliser l’information et les indicateurs",
+                  "Éclairer la prise de décision stratégique",
+                  "Automatiser les tâches à faible valeur ajoutée",
+                  "Libérer du temps pour le pilotage humain",
+                ].map((item) => (
+                  <li class="flex items-center gap-3 text-slate-700">
+                    <div class="w-2 h-2 rounded-full bg-slate-400" />
+                    <span>{item}</span>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+          <div
+            class="flex-1 bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 relative"
+          >
+            <div
+              class="absolute -top-4 -right-4 bg-slate-900 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter"
+            >
+              IA Souveraine
+            </div>
+            <p class="text-slate-900 font-medium text-lg mb-4">
+              L’IA n’est jamais une finalité.
+            </p>
+            <p class="text-slate-500 leading-relaxed italic">
+              "Je privilégie des approches sobres, maîtrisées et
+              compréhensibles, en cohérence avec vos enjeux de responsabilité et
+              d’acceptabilité."
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Transition Écologique -->
+    <section class="py-24 bg-white">
+      <div class="max-w-5xl mx-auto px-6">
+        <div
+          class="bg-emerald-50 rounded-[3rem] p-8 md:p-16 border border-emerald-100 relative overflow-hidden"
+        >
+          <div class="relative z-10 flex flex-col md:flex-row gap-12">
+            <div class="flex-1">
+              <h2
+                class="text-3xl font-bold text-slate-900 mb-6 flex items-center gap-3"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="text-emerald-600"
+                  ><path
+                    d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"
+                  ></path><path
+                    d="M2 21c0-3 1.85-5.36 5.08-6C10 14.5 10.5 13.84 10.5 11"
+                  ></path></svg
+                >
+                Transition Écologique
+              </h2>
+              <p class="text-lg text-slate-700 leading-relaxed mb-6">
+                Certifié <strong>Bilan Carbone®</strong>, j’intègre les enjeux
+                environnementaux comme un <strong>élément de pilotage</strong>,
+                et non comme un sujet isolé.
+              </p>
+              <div
+                class="inline-flex gap-2 p-1 bg-white/50 rounded-lg border border-emerald-100"
+              >
+                <span class="px-3 py-1 text-xs font-bold text-emerald-800"
+                  >ADEME</span
+                >
+                <span class="px-3 py-1 text-xs font-bold text-emerald-800"
+                  >CARBONE 4</span
+                >
+              </div>
+            </div>
+            <div class="flex-1 space-y-4">
+              {
+                [
+                  "Comprendre les impacts réels de l’activité",
+                  "Anticiper les contraintes réglementaires",
+                  "Intégrer le carbone dans les décisions stratégiques",
+                  "Équilibrer performance et sobriété",
+                ].map((item) => (
+                  <div class="flex items-start gap-3">
+                    <div class="mt-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span class="text-slate-600 text-sm font-medium">
+                      {item}
+                    </span>
+                  </div>
+                ))
+              }
+              <p
+                class="mt-6 text-emerald-900 font-bold italic pt-4 border-t border-emerald-200/50"
+              >
+                "Un levier de décision, pas une contrainte."
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Intervention Temporaire -->
+    <section class="py-24 bg-slate-50">
+      <div class="max-w-4xl mx-auto px-6 text-center">
+        <h2 class="text-3xl font-bold text-slate-900 mb-8">
+          Une intervention temporaire, une responsabilité pleine
+        </h2>
+        <p class="text-xl text-slate-600 leading-relaxed mb-12">
+          Le management de transition est par nature temporaire. Mon rôle est de
+          rendre l'organisation <strong>plus autonome</strong> à mon départ.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div
+            class="p-6 bg-white rounded-2xl shadow-sm border border-slate-100"
+          >
+            <span class="text-slate-400 font-bold block mb-2 font-logo text-xl"
+              >01</span
+            >
+            <span class="font-bold text-slate-900">Stabiliser</span>
+          </div>
+          <div
+            class="p-6 bg-white rounded-2xl shadow-sm border border-slate-100"
+          >
+            <span class="text-slate-400 font-bold block mb-2 font-logo text-xl"
+              >02</span
+            >
+            <span class="font-bold text-slate-900">Transmettre</span>
+          </div>
+          <div
+            class="p-6 bg-white rounded-2xl shadow-sm border border-slate-100"
+          >
+            <span class="text-slate-400 font-bold block mb-2 font-logo text-xl"
+              >03</span
+            >
+            <span class="font-bold text-slate-900">Sortir</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-24">
+      <div class="max-w-4xl mx-auto px-6 text-center">
+        <div
+          class="bg-slate-900 text-white p-12 md:p-20 rounded-[3rem] shadow-2xl relative overflow-hidden"
+        >
+          <div class="relative z-10">
+            <h2
+              class="text-3xl md:text-4xl font-bold mb-8 italic text-slate-200"
+            >
+              "Un échange permet souvent de clarifier la situation."
+            </h2>
+            <p
+              class="text-slate-400 text-lg mb-12 max-w-2xl mx-auto leading-relaxed"
+            >
+              Si votre organisation traverse une période où les décisions
+              deviennent difficiles, évaluons ensemble si une intervention est
+              pertinente.
+            </p>
+            <a
+              href="/contact"
+              class="inline-flex items-center gap-3 bg-white text-slate-900 px-10 py-5 rounded-2xl font-bold text-lg hover:bg-slate-100 transition shadow-xl group"
+            >
+              Échanger sur votre situation
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="group-hover:translate-x-1 transition-transform"
+                ><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg
+              >
+            </a>
+          </div>
+          <div
+            class="absolute -bottom-1/2 -right-1/4 w-96 h-96 bg-slate-800 rounded-full blur-[100px] opacity-50"
+          >
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer slot="footer" />
+
+  <style>
+    section {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+
+  <script>
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+          }
+        });
+      },
+      { threshold: 0.1 },
+    );
+
+    document.querySelectorAll("section").forEach((section) => {
+      observer.observe(section);
+    });
+  </script>
+</Layout>

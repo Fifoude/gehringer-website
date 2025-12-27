@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Mic, Paperclip, Loader2, File as FileIcon, StopCircle, Sparkles, Calendar, FileText, ListTodo, Globe, ArrowUp } from 'lucide-react';
+import { MessageCircle, X, Send, Mic, Paperclip, Loader2, File as FileIcon, StopCircle, Sparkles, Calendar, FileText, ListTodo, Globe, ArrowUp, ShieldCheck } from 'lucide-react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { Toaster, toast } from 'sonner';
 import axios from 'axios';
@@ -15,7 +15,12 @@ function cn(...inputs) {
 const N8N_URL = import.meta.env.PUBLIC_N8N_WEBHOOK_URL || 'https://n8n.gehringer.fr';
 const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAAFetvs7aO1ZlD6M'; // Key from screenshot
 
-export default function ChatWidget({ customIcon = null, customText = null }) {
+/**
+ * @param {object} props
+ * @param {string} [props.customIcon]
+ * @param {string} [props.customText]
+ */
+export default function ChatWidget({ customIcon = '', customText = '' }) {
     const [isOpen, setIsOpen] = useState(false);
     // Initial state has no messages to show the "Welcome" screen first.
     // We will add the bot greeting only when the conversation "starts" visually or keep it hidden.
@@ -29,6 +34,7 @@ export default function ChatWidget({ customIcon = null, customText = null }) {
     const [audioBlob, setAudioBlob] = useState(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
+    const textareaRef = useRef(null);
 
     // File Upload State
     const [selectedFile, setSelectedFile] = useState(null);
@@ -347,15 +353,7 @@ export default function ChatWidget({ customIcon = null, customText = null }) {
     // --- Render Helpers ---
     const renderWelcomeScreen = () => {
         // EDITABLE TEXTS
-        const title = "Votre Assistant Gehringer";
-        const subtitle = "Voici quelques exemples de ce que je peux faire, mais vous pouvez me demander tout ce que vous voulez !";
-
-        const suggestions = [
-            { icon: <Sparkles size={18} />, text: "Personnalisation de l'IA", label: "Nouveau" },
-            { icon: <FileText size={18} />, text: "Rédiger l'ordre du jour de la réunion", label: null },
-            { icon: <FileIcon size={18} />, text: "Analyser des PDF ou des images", label: null },
-            { icon: <ListTodo size={18} />, text: "Créer un outil de suivi des tâches", label: "Nouveau" },
-        ];
+        const title = "Assistant Gehringer";
 
         return (
             <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-6 overflow-y-auto">
@@ -369,27 +367,49 @@ export default function ChatWidget({ customIcon = null, customText = null }) {
 
                 <div className="space-y-2">
                     <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
-                    <p className="text-sm text-gray-500 max-w-[280px] mx-auto leading-relaxed">
-                        {subtitle}
-                    </p>
+                    <div className="text-sm text-gray-500 max-w-[300px] mx-auto leading-relaxed text-left">
+                        <p>Je peux vous aider à :</p>
+                        <ul className="list-disc pl-4 mt-1 space-y-1">
+                            <li>analyser un document</li>
+                            <li>préparer un échange ciblé avec Philippe</li>
+                            <li>clarifier un besoin ou une problématique managériale...</li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div className="w-full space-y-2">
-                    {suggestions.map((item, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => handleSendMessage(item.text)}
-                            className="w-full flex items-center gap-3 p-3 text-left bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-colors group"
-                        >
-                            <span className="text-gray-400 group-hover:text-slate-900 transition-colors">{item.icon}</span>
-                            <span className="text-sm text-gray-700 flex-1">{item.text}</span>
-                            {item.label && (
-                                <span className="text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
-                                    {item.label}
-                                </span>
-                            )}
-                        </button>
-                    ))}
+                    <button
+                        onClick={() => {
+                            setInputValue("Pourriez-vous analyser le document suivant ?");
+                            fileInputRef.current?.click();
+                            setTimeout(() => textareaRef.current?.focus(), 100);
+                        }}
+                        className="w-full flex items-center gap-3 p-3 text-left bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-colors group"
+                    >
+                        <span className="text-gray-400 group-hover:text-slate-900 transition-colors"><FileIcon size={18} /></span>
+                        <span className="text-sm text-gray-700 flex-1">Analyser une offre ou une fiche de poste</span>
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setInputValue("Évaluer l’adéquation entre le besoin suivant et l’expérience de Philippe : ");
+                            setTimeout(() => textareaRef.current?.focus(), 100);
+                        }}
+                        className="w-full flex items-center gap-3 p-3 text-left bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-colors group"
+                    >
+                        <span className="text-gray-400 group-hover:text-slate-900 transition-colors"><Sparkles size={18} /></span>
+                        <span className="text-sm text-gray-700 flex-1">Évaluer l’adéquation entre un besoin et l’expérience de Philippe</span>
+                    </button>
+                </div>
+
+                {/* Privacy/Local AI Notice */}
+                <div className="pt-2 w-full">
+                    <div className="flex gap-3 items-start p-3 bg-slate-50 border border-slate-100 rounded-xl text-[11px] text-slate-600 text-left">
+                        <ShieldCheck size={16} className="mt-0.5 shrink-0 text-slate-400" />
+                        <p className="leading-relaxed opacity-90">
+                            <strong>IA Locale & confidentielle :</strong> Pour garantir la protection de vos données, cette IA s'exécute localement. Elle est plus lente que les IA Cloud, mais assure une confidentialité totale.
+                        </p>
+                    </div>
                 </div>
             </div>
         );
@@ -573,9 +593,10 @@ export default function ChatWidget({ customIcon = null, customText = null }) {
 
                     <div className="relative border border-gray-200 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-slate-900/10 focus-within:border-slate-900 transition-all bg-white">
                         <textarea
+                            ref={textareaRef}
                             className="w-full max-h-32 p-3 pb-10 bg-transparent outline-none resize-none text-sm placeholder:text-gray-400"
                             rows={1}
-                            placeholder="Demander, chercher ou créer ce que vous voulez..."
+                            placeholder="Demander, chercher ou créer..."
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={(e) => {
@@ -596,11 +617,7 @@ export default function ChatWidget({ customIcon = null, customText = null }) {
                                 >
                                     <Paperclip size={16} />
                                 </button>
-                                <button
-                                    className="flex items-center gap-1 p-1.5 text-gray-400 hover:text-slate-900 transition-colors rounded-md hover:bg-gray-50 text-xs font-medium"
-                                >
-                                    <Globe size={16} /> <span className="hidden sm:inline">Toutes les sources</span>
-                                </button>
+
                                 <input
                                     type="file"
                                     ref={fileInputRef}

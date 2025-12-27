@@ -9,57 +9,412 @@ import Footer from "../components/Footer.astro";
   description="Manager de transition — Gehringer Conseil"
 >
   <Header slot="header" />
-  <section
-    class="max-w-5xl mx-auto px-6 py-16 flex flex-col md:flex-row items-center gap-10"
-  >
-    <!-- Photo -->
-    <div class="flex-shrink-0">
-      <img
-        src="/images/PG2.jpg"
-        alt="Portrait de Philippe Gehringer"
-        class="rounded-2xl shadow-lg w-64 h-auto md:w-80"
-      />
+
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden pt-20 pb-16 md:pt-32 md:pb-24">
+    <div class="max-w-7xl mx-auto px-6 relative z-10">
+      <div class="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+        <!-- Photo with decorative elements -->
+        <div class="relative group order-2 md:order-1 flex-shrink-0">
+          <div
+            class="absolute -inset-4 bg-gradient-to-tr from-slate-200 to-slate-50 rounded-[2rem] blur-2xl opacity-50 group-hover:opacity-75 transition duration-1000"
+          >
+          </div>
+          <div class="relative">
+            <img
+              src="/images/PG2.jpg"
+              alt="Portrait de Philippe Gehringer"
+              class="rounded-2xl shadow-2xl w-64 h-auto md:w-80 lg:w-96 object-cover transform transition duration-500 group-hover:scale-[1.02]"
+            />
+          </div>
+        </div>
+
+        <!-- Hero Content -->
+        <div class="flex-1 text-center md:text-left order-1 md:order-2">
+          <div
+            class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-sm font-medium mb-6 animate-fade-in"
+          >
+            <span class="relative flex h-2 w-2">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"
+              ></span>
+              <span
+                class="relative inline-flex rounded-full h-2 w-2 bg-slate-500"
+              ></span>
+            </span>
+            Disponible pour de nouvelles missions
+          </div>
+
+          <h1
+            class="text-4xl md:text-6xl font-bold text-slate-900 leading-tight mb-6"
+          >
+            Manager de transition pour <span
+              class="bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent"
+              >situations complexes</span
+            >
+          </h1>
+
+          <p class="text-xl text-slate-600 leading-relaxed mb-8 max-w-2xl">
+            J’interviens auprès de dirigeants confrontés à des périodes de
+            transformation, d’incertitude ou de rupture, pour <span
+              class="text-slate-900 font-medium font-logo text-3xl align-middle"
+              >stabiliser</span
+            > l’organisation, clarifier les décisions et remettre l’action en mouvement.
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+            <div
+              class="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 shadow-sm transition hover:shadow-md"
+            >
+              <div class="p-2 rounded-lg bg-slate-50 text-slate-600">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                  ></path><circle cx="9" cy="7" r="4"></circle><path
+                    d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path
+                    d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg
+                >
+              </div>
+              <span class="text-sm font-medium text-slate-700"
+                >Management opérationnel</span
+              >
+            </div>
+            <div
+              class="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 shadow-sm transition hover:shadow-md"
+            >
+              <div class="p-2 rounded-lg bg-slate-50 text-slate-600">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  ><path d="M12 8V4H8"></path><rect
+                    width="16"
+                    height="12"
+                    x="4"
+                    y="8"
+                    rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"
+                  ></path><path d="M15 13v2"></path><path d="M9 13v2"
+                  ></path></svg
+                >
+              </div>
+              <span class="text-sm font-medium text-slate-700"
+                >Technologie & IA</span
+              >
+            </div>
+            <div
+              class="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 shadow-sm transition hover:shadow-md"
+            >
+              <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  ><path
+                    d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"
+                  ></path><path
+                    d="M2 21c0-3 1.85-5.36 5.08-6C10 14.5 10.5 13.84 10.5 11"
+                  ></path></svg
+                >
+              </div>
+              <span class="text-sm font-medium text-slate-700"
+                >Transition écologique</span
+              >
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-4">
+            <a
+              href="/contact"
+              class="w-full sm:w-auto inline-flex justify-center items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-xl font-medium hover:bg-slate-800 transition shadow-lg shadow-slate-200"
+            >
+              Échanger 30 minutes
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                ><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg
+              >
+            </a>
+            <p class="text-sm text-slate-500 italic">
+              Aider à décider et agir dans la durée.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Texte -->
-    <div class="text-center md:text-left">
-      <h1 class="font-logo text-5xl text-gray-900 mb-4">Gehringer Conseil</h1>
-      <h2 class="text-xl font-semibold text-gray-700 mb-2">
-        Manager de transition pour situations complexes
+    <!-- Background Decoration -->
+    <div
+      class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[600px] h-[600px] bg-slate-50 rounded-full blur-3xl opacity-50 -z-10"
+    >
+    </div>
+  </section>
+
+  <!-- Intention Section -->
+  <section class="py-24 bg-slate-50">
+    <div class="max-w-5xl mx-auto px-6">
+      <div
+        class="bg-white rounded-[2rem] p-8 md:p-16 shadow-sm border border-slate-100 relative overflow-hidden"
+      >
+        <div
+          class="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none"
+        >
+          <svg width="200" height="200" viewBox="0 0 24 24" fill="currentColor"
+            ><path
+              d="M12 2L1 21h22L12 2zm0 3.45l8.15 14.1H3.85L12 5.45zM11 16h2v2h-2v-2zm0-7h2v5h-2V9z"
+            ></path></svg
+          >
+        </div>
+
+        <div class="relative z-10 max-w-3xl">
+          <h2
+            class="text-3xl font-bold text-slate-900 mb-8 flex items-center gap-3"
+          >
+            <span class="text-slate-400">#</span> INTENTION <span
+              class="text-xs font-normal text-slate-500 uppercase tracking-widest"
+              >(Fondamental)</span
+            >
+          </h2>
+
+          <div class="space-y-6 text-xl text-slate-600 leading-relaxed">
+            <p>
+              Être à la pointe de la technologie n’est pas contradictoire avec :
+            </p>
+            <ul class="space-y-4">
+              <li class="flex items-start gap-3">
+                <span
+                  class="mt-2 h-1.5 w-1.5 rounded-full bg-emerald-500 flex-shrink-0"
+                ></span>
+                <span
+                  >la réduction des émissions de CO₂ et la sobriété numérique</span
+                >
+              </li>
+              <li class="flex items-start gap-3">
+                <span
+                  class="mt-2 h-1.5 w-1.5 rounded-full bg-emerald-500 flex-shrink-0"
+                ></span>
+                <span>le respect des personnes et du collectif</span>
+              </li>
+            </ul>
+            <p
+              class="text-slate-900 font-medium pt-4 border-t border-slate-50 italic"
+            >
+              "La technologie — et l’intelligence artificielle en particulier —
+              n’a de valeur que si elle sert l’humain, la décision et
+              l’organisation."
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contextes Intervention -->
+  <section class="py-24">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+          Dans quels contextes j’interviens
+        </h2>
+        <p class="text-slate-500">
+          Des situations critiques où l'action immédiate est nécessaire.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {
+          [
+            {
+              title: "Performance dégradée",
+              desc: "La performance se dégrade ou devient instable, nécessitant un redressement rapide.",
+            },
+            {
+              title: "Transformation éclair",
+              desc: "Une transformation majeure doit être menée dans des délais extrêmement courts.",
+            },
+            {
+              title: "Pressions croissantes",
+              desc: "Les contraintes économiques, énergétiques ou réglementaires se renforcent.",
+            },
+            {
+              title: "IA & Digital mal exploités",
+              desc: "Les outils numériques sont présents, mais constituent un frein plutôt qu'un levier.",
+            },
+            {
+              title: "Besoin de recul",
+              desc: "Le dirigeant a besoin d’un regard extérieur expérimenté et d'un soutien opérationnel.",
+            },
+          ].map((item) => (
+            <div class="p-8 rounded-2xl border border-slate-100 bg-white hover:border-slate-300 transition group">
+              <h3 class="text-xl font-bold text-slate-900 mb-3 group-hover:text-slate-700">
+                {item.title}
+              </h3>
+              <p class="text-slate-600 leading-relaxed">{item.desc}</p>
+            </div>
+          ))
+        }
+        <div
+          class="p-8 rounded-2xl bg-slate-900 text-white flex flex-col justify-center"
+        >
+          <p class="text-lg italic opacity-90 mb-4">
+            "Ce sont des situations où ne pas décider est déjà une décision."
+          </p>
+          <div class="h-1 w-12 bg-white/20"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Posture -->
+  <section class="py-24 bg-slate-50">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="flex flex-col md:flex-row gap-16 items-center">
+        <div class="flex-1">
+          <h2 class="text-3xl font-bold text-slate-900 mb-6">Ma Posture</h2>
+          <p class="text-xl text-slate-600 leading-relaxed mb-8">
+            Je ne fais pas du conseil hors-sol. Je m’engage dans l’action, aux
+            côtés des équipes, avec une responsabilité claire.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div class="flex items-center gap-3">
+              <div
+                class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-sm font-bold italic"
+              >
+                1
+              </div>
+              <span class="font-medium">Décisions pragmatiques</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div
+                class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-sm font-bold italic"
+              >
+                2
+              </div>
+              <span class="font-medium">Priorités assumées</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div
+                class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-sm font-bold italic"
+              >
+                3
+              </div>
+              <span class="font-medium">Discernement technologique</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div
+                class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-sm font-bold italic"
+              >
+                4
+              </div>
+              <span class="font-medium">Résultats durables</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="py-24">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="text-3xl font-bold text-slate-900 mb-6">
+        Vous vous interrogez sur la pertinence d’un accompagnement ?
       </h2>
-      <p class="text-gray-600 leading-relaxed mb-4">
-        J’interviens auprès de dirigeants confrontés à des périodes de
-        transformation, d’incertitude ou de rupture, pour <strong
-          >stabiliser l’organisation, clarifier les décisions</strong
-        > et <strong>remettre l’action en mouvement</strong>.
-      </p>
-      Mon approche combine :<br />
-      <ul class="list-disc pl-5 space-y-2 text-gray-700">
-        <li>management opérationnel</li>
-        <li>technologie maîtrisée (dont l’IA)</li>
-        <li>transition écologique intégrée au pilotage</li>
-      </ul>
-      👉 Toujours avec un objectif simple : aider à décider et agir dans la durée.
-      <ul class="list-disc pl-5 space-y-2 text-gray-700">
-        <li>Transformation numérique et innovation</li>
-        <li>Responsabilité Sociétale des Entreprises (RSE)</li>
-        <li>Stratégie carbone et transition énergétique</li>
-        <li>IA éthique et souveraine (Ollama, n8n, Botpress)</li>
-      </ul>
-      <p class="text-gray-600 leading-relaxed mb-6">
-        Certifié <strong>Bilan Carbone®</strong>, j’aide les organisations à
-        renforcer leur stratégie RSE et à accélérer leur transition vers la
-        décarbonation, tout en conciliant performance économique et impact
-        environnemental.
+      <p class="text-xl text-slate-600 mb-10">
+        Un échange exploratoire permet souvent d’y voir clair. Sans engagement.
       </p>
       <a
-        href="/services"
-        class="inline-block bg-gray-900 text-white px-6 py-3 rounded-xl hover:bg-gray-700 transition"
+        href="/contact"
+        class="inline-flex items-center gap-3 bg-slate-900 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-slate-800 transition shadow-xl shadow-slate-200 group"
       >
-        Découvrir mes services
+        Démarrer l'échange
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="group-hover:translate-x-1 transition-transform"
+          ><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg
+        >
       </a>
     </div>
   </section>
 
   <Footer slot="footer" />
+
+  <style>
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+
+    section {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+
+  <script>
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+          }
+        });
+      },
+      { threshold: 0.1 },
+    );
+
+    document.querySelectorAll("section").forEach((section) => {
+      observer.observe(section);
+    });
+  </script>
 </Layout>

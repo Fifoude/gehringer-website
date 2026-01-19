@@ -13,7 +13,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -1552,
+        -1792,
         848
       ],
       "webhookId": "d41783e1-c8f6-4aba-bd51-5016acb5582a"
@@ -47,7 +47,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        -1024,
+        -1264,
         800
       ]
     },
@@ -91,7 +91,7 @@
       "typeVersion": 1,
       "position": [
         -912,
-        1728
+        1600
       ],
       "credentials": {
         "jwtAuth": {
@@ -99,7 +99,8 @@
           "name": "JWT Auth account"
         }
       },
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "notes": "Valide le jeton d'accès fourni par le chatbot. Extrait l'email et les labels de l'utilisateur (permissions) contenus dans le payload."
     },
     {
       "parameters": {
@@ -113,8 +114,8 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1,
       "position": [
-        -96,
-        1408
+        96,
+        1376
       ],
       "credentials": {
         "openAiApi": {
@@ -154,6 +155,8 @@
     },
     {
       "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { message: $json.text, output: $json.text, text: $json.text } }}",
         "options": {}
       },
       "id": "76111c16-5398-4a80-bdbe-00d49c3c8aff",
@@ -161,8 +164,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2048,
-        1712
+        1840,
+        1504
       ]
     },
     {
@@ -408,8 +411,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -288,
-        1408
+        -224,
+        1392
       ],
       "id": "25e42bcc-525c-414c-8589-4377a650a7c2",
       "name": "Code in JavaScript1"
@@ -423,11 +426,12 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3,
       "position": [
-        1248,
-        1536
+        3536,
+        1696
       ],
       "id": "eeffecec-f26c-4c74-ad1e-a017db26a5e1",
       "name": "AI Agent",
+      "disabled": true,
       "onError": "continueErrorOutput"
     },
     {
@@ -444,8 +448,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        1248,
-        1344
+        3536,
+        1504
       ],
       "id": "75514fd6-99c3-4d14-84c5-f25187dfdd73",
       "name": "OpenAI Chat Model",
@@ -454,7 +458,8 @@
           "id": "pe1RxUmCYaJzcwAP",
           "name": "OpenAi account"
         }
-      }
+      },
+      "disabled": true
     },
     {
       "parameters": {
@@ -533,19 +538,74 @@
     },
     {
       "parameters": {
-        "mode": "expression",
-        "numberOutputs": 3,
-        "output": "={{ ($('Webhook (Entrée Unique)').first().binary?.audio != null || ($('Webhook (Entrée Unique)').first().binary?.data?.mimeType?.startsWith('audio/') || false)) ? 0 : (($('Webhook (Entrée Unique)').first().binary?.file != null || $('Webhook (Entrée Unique)').first().binary?.data != null) ? 1 : 2) }}"
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Webhook (Entrée Unique)').first().binary?.audio != null || ($('Webhook (Entrée Unique)').first().binary?.data?.mimeType?.startsWith('audio/') || false) }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "385fec2f-02e9-442e-adbd-e95283016e70"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "000cf1d9-012c-456f-94e7-cc7ba22e7c01",
+                    "leftValue": "={{ $('Webhook (Entrée Unique)').first().binary?.file != null || $('Webhook (Entrée Unique)').first().binary?.data != null }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "doc"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
       },
       "id": "401c868c-de35-47db-b16d-8deb7c3595cc",
       "name": "Router (Content Type)",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
       "position": [
-        -528,
-        1488
+        -448,
+        1584
       ],
-      "notesInFlow": false
+      "notesInFlow": false,
+      "alwaysOutputData": false
     },
     {
       "parameters": {
@@ -985,11 +1045,12 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        -704,
-        1504
+        -688,
+        1600
       ],
       "id": "9d9539c0-4b8b-4563-83b9-0e91ab60a73a",
-      "name": "Log: Chat Message"
+      "name": "Log: Chat Message",
+      "notes": "Enregistre la tentative de message dans la table Audit_Logs. Indispensable pour la traçabilité et le monitoring des usages par email et IP."
     },
     {
       "parameters": {
@@ -1494,10 +1555,10 @@
       "parameters": {
         "conditions": {
           "options": {
-            "caseSensitive": true,
+            "version": 3,
             "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
+            "caseSensitive": true,
+            "typeValidation": "strict"
           },
           "conditions": [
             {
@@ -1506,8 +1567,7 @@
               "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
+                "operation": "notEmpty"
               }
             }
           ],
@@ -1528,10 +1588,10 @@
       "parameters": {
         "conditions": {
           "options": {
-            "caseSensitive": true,
+            "version": 3,
             "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
+            "caseSensitive": true,
+            "typeValidation": "strict"
           },
           "conditions": [
             {
@@ -1540,8 +1600,7 @@
               "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
+                "operation": "notEmpty"
               }
             }
           ],
@@ -1608,7 +1667,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1312,
+        -1552,
         848
       ],
       "id": "10b4106e-040c-48d0-acfc-9cbac783dc43",
@@ -1624,8 +1683,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -288,
-        1840
+        -208,
+        1792
       ]
     },
     {
@@ -1652,8 +1711,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -96,
-        1840
+        96,
+        1808
       ]
     },
     {
@@ -1665,11 +1724,11 @@
           "parameters": [
             {
               "name": "model",
-              "value": "llama3.2"
+              "value": "gemma2:2b"
             },
             {
               "name": "prompt",
-              "value": "=Tu es un routeur intelligent spécialisé pour un assistant professionnel (Gehringer).\nAnalyse l'entrée utilisateur et décide si elle nécessite une recherche dans la base de connaissances (RAG) ou si c'est une simple discussion (CHAT).\n\nCRITÈRES DE DÉCISION :\n- INTENT \"rag\" : Uniquement si la question porte sur des aspects professionnels spécifiques comme :\n  - L'analyse d'un profil par rapport à un poste (matching).\n  - Des questions sur des missions, des offres d'emploi ou des opportunités.\n  - Une demande de CV ou de parcours professionnel.\n  - L'analyse du contenu d'un document joint.\n\n- INTENT \"chat\" : Pour tout le reste, y compris :\n  - Salutations (\"Bonjour\", \"Ça va ?\").\n  - Questions générales, culturelles ou météo (\"Quelle est la météo à Paris ?\").\n  - Discussions sans lien direct avec le recrutement ou les documents joints.\n\nContexte : {{$json.file_metadata ? 'Fichier joint' : 'Aucun fichier'}}\nEntrée : {{ $json.text || $json.ocr_text || $('Webhook (Entrée Unique)').item.json.body.text || $('Webhook (Entrée Unique)').item.json.body.message }}\n\nRéponds UNIQUEMENT au format JSON strict :\n{ \"intent\": \"rag\" | \"chat\", \"reason\": \"...\" }"
+              "value": "=Tu es un routeur intelligent spécialisé pour un assistant professionnel (Gehringer).\nAnalyse l'entrée utilisateur et décide si elle nécessite une recherche dans la base de connaissances (RAG) ou si c'est une simple discussion (CHAT).\n\nCRITÈRES DE DÉCISION :\n- INTENT \"rag\" : Uniquement si la question porte sur des aspects professionnels spécifiques comme :\n- L'analyse d'un profil par rapport à un poste (matching).\n- Des questions sur des missions, des offres d'emploi ou des opportunités.\n- Une demande de CV ou de parcours professionnel.\n- L'analyse du contenu d'un document joint.\n\n- INTENT \"chat\" : Pour tout le reste, y compris :\n- Salutations (\"Bonjour\", \"Ça va ?\").\n- Questions générales, culturelles ou météo (\"Quelle est la météo à Paris ?\").\n- Discussions sans lien direct avec le recrutement ou les documents joints.\n\nContexte : {{$json.file_metadata ? 'Fichier joint' : 'Aucun fichier'}}\nEntrée : {{ $json.text || $json.ocr_text || $('Webhook (Entrée Unique)').item.json.body.text || $('Webhook (Entrée Unique)').item.json.body.message }}\n\nRéponds UNIQUEMENT au format JSON strict :\n{ \"intent\": \"rag\" | \"chat\", \"reason\": \"...\" }"
             },
             {
               "name": "format",
@@ -1688,21 +1747,22 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        160,
-        1584
-      ]
+        3664,
+        2240
+      ],
+      "disabled": true
     },
     {
       "parameters": {
-        "jsCode": "// Context Merger: Récupère les données éparpillées pour l'IA\nconst ollama = $node[\"Router Ollama\"].json;\nconst intentResponse = JSON.parse(ollama.response || \"{}\");\n\n// Nodes fixes (toujours exécutés)\nconst webhook = $(\"Webhook (Entrée Unique)\");\nconst contacts = $(\"Sécurité (Vérifier JWT)\");\n\n// --- DETECTION DU CHEMIN ---\nconst binary = webhook.first().binary || {};\nconst hasAudioKey = binary.audio != null;\nconst hasDataKey = binary.data != null;\nconst mimeType = (hasDataKey && binary.data.mimeType) ? binary.data.mimeType : \"\";\n\nconst isAudio = hasAudioKey || mimeType.startsWith('audio/');\nconst isFile = !isAudio && (binary.file != null || hasDataKey);\n\n// --- RECUPERATION SECURISEE ---\nlet gatekeeper = null;\nlet stt = null;\n\nif (isFile) {\n   try { gatekeeper = $(\"File Gatekeeper\"); } catch(e) {}\n}\n\nif (isAudio) {\n   try { stt = $(\"Whisper (STT)\"); } catch(e) {}\n}\n\n// --- SYNTHÈSE DU TEXTE (COMBINAISON) ---\n\n// 1. Message de l'utilisateur (Direct ou Audio)\nlet userInstructions = \"\";\ntry { \n  userInstructions = webhook.first().json.body.message || webhook.first().json.body.text || \"\"; \n} catch(e) {}\n\nif (!userInstructions && stt && stt.first()) {\n  try { userInstructions = stt.first().json.text; } catch(e) {}\n}\n\n// 2. Contenu du fichier\nlet fileContent = \"\";\nif (gatekeeper && gatekeeper.first()) {\n    try { fileContent = gatekeeper.first().json.text; } catch(e) {}\n}\n\n// 3. Construction des inputs pour l'IA\n// Pour l'AI Agent (Chat classique) : On combine tout pour qu'il ait le contexte complet\nlet fullPrompt = userInstructions;\nif (fileContent) {\n  fullPrompt += \"\\n\\n--- CONTENU DU FICHIER JOINT ---\\n\" + fileContent;\n}\n\n// Si vraiment tout est vide, on met un fallback\nif (!fullPrompt && !fileContent) {\n  fullPrompt = \"Bonjour\";\n}\n\n// --- RÉCUPÉRATION DES RÉSERVES (Metadata / Labels) ---\nconst fileMeta = (gatekeeper && gatekeeper.first()) ? gatekeeper.first().json.file_metadata : null;\n\nlet userLabels = [\"public\"];\ntry {\n  const payload = contacts.first().json.payload;\n  if (payload && payload.user_labels) {\n    userLabels = payload.user_labels;\n    if (typeof userLabels === 'string') userLabels = userLabels.split(',');\n  }\n} catch(e) {}\n\n// --- RÉCUPÉRATION DE L'EMAIL ---\nconst email = contacts.first().json.payload.email; // Récupéré du JWT\n\nreturn [{\n  json: {\n    intent: intentResponse.intent || \"chat\",\n    reason: intentResponse.reason || \"Default\",\n    text: fullPrompt, // Utilisé par l'AI Agent (Complet : Instructions + PDF)      \n    chatInput: userInstructions || \"Analyse du document\", // Utilisé par le RAG (Ta question uniquement)\n    file_metadata: fileMeta,\n    email: email // <--- On ajoute l'email ici\n  }\n}];"
+        "jsCode": "/* \n  CONTEXT MERGER (Audit-Fix)\n  Sépare le texte saisi de la retranscription binaire et ajoute l'email.\n*/\n\nconst data = $input.first().json;\nlet webhookBody = {}; \ntry { webhookBody = $('Webhook (Entrée Unique)').first().json.body || {}; } catch(e){}\n\n// 1. Extraction de l'Email et des Labels depuis le JWT\nlet email = \"no-email\";\nlet userLabels = [];\ntry {\n   const jwtPayload = $('Sécurité (Vérifier JWT)').first().json.payload;\n   email = jwtPayload.email || \"no-email\";\n   if(jwtPayload.user_labels) {\n       userLabels = Array.isArray(jwtPayload.user_labels) ? jwtPayload.user_labels : jwtPayload.user_labels.split(',');\n   }\n} catch(e) {}\n\n// 2. Distinction des entrées\n// Text saisi par l'utilisateur (Inline)\nconst user_text = webhookBody.text || webhookBody.chatInput || webhookBody.message || \"\";\n\n// Contenu extrait des médias (Audio ou PDF)\nconst file_text = data.transcription || data.text || \"\"; \n\n// 3. Construction du chatInput final (pour compatibilité descendante)\n// On combine proprement si les deux existent\nlet combinedQuery = user_text;\nif (file_text && file_text !== user_text) {\n    combinedQuery = user_text ? `${user_text}\\n\\n[Contenu du document/audio]:\\n${file_text}` : file_text;\n}\n\nreturn [{\n  json: {\n    email,\n    user_labels: userLabels,\n    text_input: user_text,\n    media_transcription: file_text,\n    chatInput: combinedQuery,\n    sessionId: webhookBody.sessionId || \"no-session\",\n    processedAt: new Date().toISOString()\n  }\n}];"
       },
       "id": "562a4dde-c2b0-4658-a191-f99de9e1116a",
       "name": "Context Merger",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        352,
-        1584
+        448,
+        1552
       ]
     },
     {
@@ -1726,9 +1786,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        608,
-        1552
-      ]
+        3088,
+        1680
+      ],
+      "disabled": true
     },
     {
       "parameters": {
@@ -1754,9 +1815,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        912,
-        1808
-      ]
+        3424,
+        2208
+      ],
+      "disabled": true
     },
     {
       "parameters": {
@@ -1794,11 +1856,12 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        1312,
-        1792
+        3600,
+        1952
       ],
       "id": "67614a42-da47-4cbd-9147-771c0b86c380",
-      "name": "Is PDF?"
+      "name": "Is PDF?",
+      "disabled": true
     },
     {
       "parameters": {
@@ -1816,8 +1879,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        1568,
-        1712
+        3856,
+        1872
       ],
       "id": "dc31ff01-53c0-42cf-ad68-ad42d3c9ded2",
       "name": "Send email1",
@@ -1828,7 +1891,249 @@
           "name": "SMTP account"
         }
       },
+      "disabled": true,
       "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "# Entrée et Audit",
+        "height": 272,
+        "width": 448
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -976,
+        1520
+      ],
+      "typeVersion": 1,
+      "id": "0bd8dc5c-d7f0-4482-b49b-d428c3669ae7",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "sk0XdwzdY0Zk_ZM-Pso2Z",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/sk0XdwzdY0Zk_ZM-Pso2Z",
+          "cachedResultName": "Philippe AI Brain (Central - Final Fix)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1600,
+        1504
+      ],
+      "id": "05e52a67-fa99-4056-bfa6-1fbbbbb26887",
+      "name": "Call 'Philippe AI Brain (Central - Final Fix)'"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.chatInput }}",
+        "guardrails": {
+          "topicalAlignment": {
+            "value": {
+              "threshold": 0.6,
+              "prompt": "Vous êtes un système d'analyse de contenu qui détermine si un texte reste dans le périmètre autorisé.\n\nPÉRIMÈTRE AUTORISÉ :\n1. Questions professionnelles concernant :\n   - L'entreprise Gehringer\n   - Philippe Gehringer (compétences, services, expérience)\n   - Les services proposés par l'entreprise\n   \n2. Messages de politesse :\n   - Salutations (bonjour, bonsoir, hello)\n   - Remerciements (merci, thanks)\n   - Formules de politesse (au revoir, à bientôt)\n\nHORS PÉRIMÈTRE (à bloquer) :\n- Actualités générales\n- Cuisine, recettes\n- Sport, divertissement\n- Politique\n- Santé personnelle\n- Tout sujet non lié à Gehringer/Philippe ou aux services\n\nDéterminez si le texte respecte le périmètre autorisé."
+            }
+          }
+        }
+      },
+      "id": "guardrail-topic-filter",
+      "name": "Guardrail - Topic Filter",
+      "type": "@n8n/n8n-nodes-langchain.guardrails",
+      "typeVersion": 2,
+      "position": [
+        2928,
+        1952
+      ],
+      "disabled": true,
+      "notes": "🛡️ Niveau 1 : Filtrage des sujets hors périmètre professionnel"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2928,
+        2192
+      ],
+      "id": "1417ae0b-4243-4afb-b315-71672f3029b1",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "pe1RxUmCYaJzcwAP",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/* \n  CONTEXT MERGER (Corrigé)\n  Récupère le message peu importe son nom.\n*/\n\n// Références aux nœuds\nconst data = $input.first().json;\nlet webhookBody = {};\ntry { webhookBody = $('Webhook (Entrée Unique)').first().json.body || {}; } catch(e){}\nlet inputValidation = {};\ntry { inputValidation = $('Input Validation').first().json || {}; } catch(e){}\n\n// LISTE DES CANDIDATS (Ordre de priorité)\n// On a ajouté 'text' venant du body du webhook, c'est celui qu'on a vu sur la capture.\nconst candidates = [\n  // 1. Inputs directs (votre Routeur ou Whisper)\n  data.text, data.transcription, data.chatInput, \n  \n  // 2. Input Validation (s'il normalise)\n  inputValidation.chatInput, inputValidation.text,\n  \n  // 3. Webhook Source (La vérité nue)\n  webhookBody.text,        // <--- C'EST CELUI-LA QU'ON VEUT !\n  webhookBody.chatInput, \n  webhookBody.message\n];\n\n// Trouver le premier non-vide\nlet finalQuery = candidates.find(c => c && typeof c === 'string' && c.trim() !== \"\") || \"\";\n\n// Récupération Session\nconst sessionId = data.sessionId || inputValidation.sessionId || webhookBody.sessionId || \"no-session\";\n\nreturn [\n  {\n    json: {\n      chatInput: finalQuery, // Sera \"Bonjour, qui es-tu ?\"\n      sessionId: sessionId,\n      processedAt: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "id": "3c587d56-750c-4f5c-955c-dc007911f9ac",
+      "name": "Context Merger old",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3136,
+        2192
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: \"Tu es un contrôleur d'accès. Analyse l'entrée utilisateur.\\n\\nGUIDE DE CLASSIFICATION :\\n1. 'pro': Sujets Gehringer, Recrutement, Management de transition, Compétences de Philippe, ou Politesse basique (Bonjour, Merci).\\n2. 'shadow': Sujets Appartement, Wifi, Clés, Code d'entrée, Infos privées.\\n   -> CONDITION: L'utilisateur DOIT avoir le tag 'Airbnb', 'Ami', ou 'Famille'.\\n   -> Si les droits sont absents, classer en 'blocked'.\\n3. 'blocked': Météo, Politique, Sport, Recettes, blagues génériques, ou Shadow sans droits.\\n\\nRéponds UNIQUEMENT le JSON : { \\\"category\\\": \\\"pro\\\" | \\\"shadow\\\" | \\\"blocked\\\" }\" }, { role: 'user', content: 'Message: ' + $json.chatInput + '\\nTags: ' + $json.user_labels } ], temperature: 0 }) }}",
+        "options": {}
+      },
+      "id": "9b49dc3d-ccb3-4267-a573-a82ac9495360",
+      "name": "Rights Analyzer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        736,
+        1552
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "pe1RxUmCYaJzcwAP",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let analysis = { category: 'blocked' };\ntry {\n  const content = $json.choices[0].message.content;\n  // Nettoyage markdown json si présent\n  const cleanJson = content.replace(/```json/g, '').replace(/```/g, '').trim();\n  analysis = JSON.parse(cleanJson);\n} catch(e) {}\n\n// RECUPERATION DU CONTEXTE ORIGINAL\n// On reprend tout ce qui sortait du Context Merger (chatInput, user_labels, sessionId...)\nconst originalContext = $('Context Merger').first().json;\n\nreturn [{\n  json: {\n    ...originalContext,\n    rights_category: analysis.category\n  }\n}];"
+      },
+      "id": "09e6d275-076d-462d-9e36-aef7465591a6",
+      "name": "Parse Rights",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        1552
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.rights_category }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "pro"
+            },
+            {
+              "value2": "shadow",
+              "output": 1
+            },
+            {
+              "value2": "blocked",
+              "output": 2
+            }
+          ]
+        }
+      },
+      "id": "9c454b2e-97f9-44e7-8d7c-da74acd34dd7",
+      "name": "Router (User Rights)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"output\": \"Désolé, je ne peux pas traiter votre demande. Je suis exclusivement dédié aux échanges professionnels concernant les activités de Philippe Gehringer.\"\n}",
+        "options": {}
+      },
+      "id": "ed95923f-eafc-41fb-abab-b57039f5123c",
+      "name": "Rejection Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        1888
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n \"text\": \"[🗝️ MODE PRIVÉ ACTIVÉ]\\n\\nBonjour ! Je vois que vous faites partie des invités privilégiés (Airbnb/Ami).\\n\\nVoici ce que je peux faire pour vous :\\n- Vous donner le code Wifi\\n- Vous expliquer comment récupérer les clés\\n- Vous indiquer où se trouvent les poubelles...\\n\\nQue souhaitez-vous savoir ?\"\n}",
+        "options": {}
+      },
+      "id": "c0c0a082-b3f5-47f9-b3c0-52b26f1020a7",
+      "name": "Shadow Brain Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        1712
+      ]
+    },
+    {
+      "parameters": {
+        "content": "# Traitement selon type de contenant\n## Accepte inline, audio & pdf",
+        "height": 720,
+        "width": 1120,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -496,
+        1280
+      ],
+      "typeVersion": 1,
+      "id": "b217401d-6145-46f3-bde5-8d9d89c4d2aa",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# Triage selon contenu\n## Différents brains\n",
+        "height": 368,
+        "width": 704,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        688,
+        1424
+      ],
+      "typeVersion": 1,
+      "id": "4acc5b96-bc8e-4afc-bd6e-a1277c7de7a7",
+      "name": "Sticky Note3"
     }
   ],
   "pinData": {
@@ -1837,38 +2142,51 @@
         "json": {
           "headers": {
             "host": "n8n.gehringer.fr",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:146.0) Gecko/20100101 Firefox/146.0",
-            "content-length": "68",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+            "content-length": "384647",
             "accept": "application/json, text/plain, */*",
             "accept-encoding": "gzip, br",
-            "accept-language": "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3",
+            "accept-language": "en-US,en;q=0.9,fr;q=0.8",
+            "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVzSW4iOjkwMCwiZW1haWwiOiJmaWZvdWRlQGhvdG1haWwuY29tIiwidXNlcl9sYWJlbHMiOiIiLCJpYXQiOjE3Njg0MjY3OTd9.wso_zS1ecZHkyTPTzZ4kLYh-qt8e8WEU3Md41d9ZPoI",
             "cdn-loop": "cloudflare; loops=1",
-            "cf-connecting-ip": "82.64.157.46",
+            "cf-connecting-ip": "2a01:e0a:183:7c60:7d4e:2fb1:d5bd:4a82",
             "cf-ipcountry": "FR",
-            "cf-ray": "9ae890ae5b99dec7-CDG",
+            "cf-ray": "9bed040428c80279-CDG",
             "cf-visitor": "{\"scheme\":\"https\"}",
-            "cf-warp-tag-id": "67c37131-0032-4af7-9440-7b57888a89f7",
+            "cf-warp-tag-id": "b58e200c-9718-4899-9cc5-972a6e49f296",
             "connection": "keep-alive",
-            "content-type": "application/json",
+            "content-type": "multipart/form-data; boundary=----WebKitFormBoundarynEBRBpWXWOeBWQH9",
             "origin": "http://localhost:4321",
-            "priority": "u=0",
+            "priority": "u=1, i",
             "referer": "http://localhost:4321/",
+            "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
-            "sec-gpc": "1",
-            "x-forwarded-for": "82.64.157.46",
+            "x-forwarded-for": "2a01:e0a:183:7c60:7d4e:2fb1:d5bd:4a82",
             "x-forwarded-proto": "https"
           },
           "params": {},
           "query": {},
           "body": {
-            "email": "fifoude@hotmail.com",
-            "code": "6501",
-            "action": "auth-verify"
+            "action": "chat-message",
+            "history": "[]"
           },
           "webhookUrl": "https://n8n.gehringer.fr/webhook/chat-api",
           "executionMode": "production"
+        },
+        "binary": {
+          "file": {
+            "mimeType": "application/pdf",
+            "fileType": "pdf",
+            "fileExtension": "pdf",
+            "data": "filesystem-v2",
+            "fileName": "Offre Emploi CDI Directeur Régional Paris (75) - Recrutement par Murano _ Hellowork.pdf",
+            "id": "filesystem-v2:workflows/eBBXkB0vqJOsW6g8/executions/temp/binary_data/9f083239-56a3-418c-be94-f35ba4c690a2",
+            "fileSize": "384 kB"
+          }
         },
         "pairedItem": {
           "item": 0
@@ -1971,7 +2289,7 @@
       "main": [
         [
           {
-            "node": "Router Ollama",
+            "node": "Context Merger",
             "type": "main",
             "index": 0
           }
@@ -2053,20 +2371,8 @@
     },
     "AI Agent": {
       "main": [
-        [
-          {
-            "node": "Réponse Chat",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Normaliseur d'Erreur",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [],
+        []
       ]
     },
     "OpenAI Chat Model": {
@@ -2131,11 +2437,12 @@
         ],
         [
           {
-            "node": "Router Ollama",
+            "node": "Context Merger",
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     },
     "Restore Binary": {
@@ -2474,7 +2781,7 @@
       "main": [
         [
           {
-            "node": "Router Ollama",
+            "node": "Context Merger",
             "type": "main",
             "index": 0
           }
@@ -2483,24 +2790,7 @@
     },
     "Router Ollama": {
       "main": [
-        [
-          {
-            "node": "Context Merger",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Context Merger": {
-      "main": [
-        [
-          {
-            "node": "Router (Switch Intent)",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Router (Switch Intent)": {
@@ -2541,6 +2831,17 @@
             "index": 0
           }
         ],
+        []
+      ]
+    },
+    "Send email1": {
+      "main": [
+        [],
+        []
+      ]
+    },
+    "Call 'Philippe AI Brain (Central - Final Fix)'": {
+      "main": [
         [
           {
             "node": "Réponse Chat",
@@ -2550,18 +2851,69 @@
         ]
       ]
     },
-    "Send email1": {
+    "Context Merger": {
       "main": [
         [
           {
-            "node": "Réponse Chat",
+            "node": "Rights Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Guardrail - Topic Filter",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rights Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Parse Rights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Rights": {
+      "main": [
+        [
+          {
+            "node": "Router (User Rights)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router (User Rights)": {
+      "main": [
+        [
+          {
+            "node": "Call 'Philippe AI Brain (Central - Final Fix)'",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Normaliseur d'Erreur",
+            "node": "Shadow Brain Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rejection Response",
             "type": "main",
             "index": 0
           }
@@ -2575,11 +2927,18 @@
     "availableInMCP": true,
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "f8da5b15-ec66-45fd-a608-fb76651eb16e",
+  "versionId": "98f978c7-6c34-4747-8124-20128fb05da5",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"
   },
   "id": "eBBXkB0vqJOsW6g8",
-  "tags": []
+  "tags": [
+    {
+      "updatedAt": "2026-01-12T16:26:32.123Z",
+      "createdAt": "2026-01-12T16:26:32.123Z",
+      "id": "0xE9WHXJKvU4ffh4",
+      "name": "Chatbot"
+    }
+  ]
 }

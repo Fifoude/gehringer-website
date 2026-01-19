@@ -31,5 +31,5 @@ pnpm-debug.log*
 # n8n workflows (may contain hardcoded secrets)
 n8n/
 
-# Some lacal files (may contain hardcoded secrets)
+# Some local files (may contain hardcoded secrets)
 SECURITY-NOTES.md

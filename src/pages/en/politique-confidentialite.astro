@@ -1,0 +1,157 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import { siteInfo } from "../../config/siteInfo";
+---
+
+<Layout
+    title="Privacy Policy – Gehringer Consulting"
+    description="Privacy policy and protection of personal data of Gehringer Consulting."
+>
+    <Header slot="header" />
+    <section class="max-w-5xl mx-auto px-6 py-16 text-gray-700">
+        <h1 class="font-logo text-5xl text-center text-gray-900 mb-12">
+            Privacy Policy
+        </h1>
+
+        <!-- Introduction -->
+        <p
+            class="text-center text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
+        >
+            This privacy policy describes the way <strong
+                >Gehringer Consulting</strong
+            >
+            processes personal information collected via this website, in compliance
+            with the <strong>General Data Protection Regulation (GDPR)</strong>.
+        </p>
+
+        <!-- 1. Data Controller -->
+        <h2 class="text-2xl font-semibold mb-3">1. Data Controller</h2>
+        <p class="mb-8 leading-relaxed">
+            The data controller is:
+            <br />
+            <strong>Philippe Gehringer</strong> — Gehringer Consulting
+            <br />
+            Email : <a
+                href={`mailto:${siteInfo.email}`}
+                class="underline hover:text-slate-900 transition"
+                >{siteInfo.email}</a
+            >
+        </p>
+
+        <!-- 2. Data Collected -->
+        <h2 class="text-2xl font-semibold mb-3">2. Data Collected</h2>
+        <p class="mb-8 leading-relaxed">
+            The website <strong>gehringer.fr</strong> only collects personal data
+            in the following cases:
+        </p>
+        <ul class="list-disc pl-6 mb-8 space-y-2">
+            <li>
+                When you use the <strong>contact form</strong> (name, email address,
+                message);
+            </li>
+            <li>
+                When you voluntarily communicate your information by email or
+                via LinkedIn.
+            </li>
+        </ul>
+        <p class="mb-8 leading-relaxed">
+            No sensitive data (ethnic origin, political opinions, health, etc.)
+            is collected.
+        </p>
+
+        <!-- 3. Purpose of Processing -->
+        <h2 class="text-2xl font-semibold mb-3">3. Purpose of Processing</h2>
+        <p class="mb-8 leading-relaxed">The collected data is used only to:</p>
+        <ul class="list-disc pl-6 mb-8 space-y-2">
+            <li>Respond to your requests via the contact form;</li>
+            <li>Contact you for professional proposals or exchanges;</li>
+            <li>
+                Ensure the administrative follow-up of your requests if
+                applicable.
+            </li>
+        </ul>
+
+        <!-- 4. Legal Basis -->
+        <h2 class="text-2xl font-semibold mb-3">4. Legal Basis</h2>
+        <p class="mb-8 leading-relaxed">
+            The processing is based on your <strong>explicit consent</strong>,
+            given when you submit the form or send a message voluntarily.
+        </p>
+
+        <!-- 5. Retention Period -->
+        <h2 class="text-2xl font-semibold mb-3">5. Retention Period</h2>
+        <p class="mb-8 leading-relaxed">
+            Data transmitted via the contact form is kept for a maximum duration
+            of
+            <strong>12 months</strong>, then automatically deleted, unless a
+            prolonged contractual relationship is established.
+        </p>
+
+        <!-- 6. Data Sharing -->
+        <h2 class="text-2xl font-semibold mb-3">6. Data Sharing and Hosting</h2>
+        <p class="mb-8 leading-relaxed">
+            No data is shared or sold to third parties. Forms are hosted and
+            processed via the <strong>Netlify</strong> platform, which applies GDPR-compliant
+            measures for form management.
+        </p>
+
+        <!-- 7. User Rights -->
+        <h2 class="text-2xl font-semibold mb-3">7. Your Rights</h2>
+        <p class="mb-8 leading-relaxed">
+            In accordance with the GDPR, you have the following rights:
+        </p>
+        <ul class="list-disc pl-6 mb-8 space-y-2">
+            <li>Right of access to your data;</li>
+            <li>Right of rectification or deletion;</li>
+            <li>Right to object or limit processing.</li>
+        </ul>
+        <p class="mb-8 leading-relaxed">
+            You can exercise these rights by sending a message to:
+            <a
+                href={`mailto:${siteInfo.email}`}
+                class="underline hover:text-slate-900 transition"
+                >{siteInfo.email}</a
+            >.
+        </p>
+
+        <!-- 8. Data Security -->
+        <h2 class="text-2xl font-semibold mb-3">8. Data Security</h2>
+        <p class="mb-8 leading-relaxed">
+            Technical and organizational measures are implemented to protect
+            your data against unauthorized access, loss, or modification.
+        </p>
+
+        <!-- 9. Cookies -->
+        <h2 class="text-2xl font-semibold mb-3">9. Cookies</h2>
+        <p class="mb-8 leading-relaxed">
+            The website <strong>gehringer.fr</strong> does not place any tracking
+            or advertising cookies. Only strictly necessary cookies for the operation
+            of the site may be used (e.g., related to hosting or security).
+        </p>
+
+        <!-- 10. Contact -->
+        <h2 class="text-2xl font-semibold mb-3">10. Contact</h2>
+        <p class="mb-8 leading-relaxed">
+            For any questions relating to privacy or your personal data, you can
+            write to:
+            <a
+                href={`mailto:${siteInfo.email}`}
+                class="underline hover:text-slate-900 transition"
+                >{siteInfo.email}</a
+            >.
+        </p>
+
+        <!-- Back Button -->
+        <div class="text-center mt-16">
+            <a
+                href="/en"
+                class="inline-block bg-gray-900 text-white px-8 py-3 rounded-xl hover:bg-gray-700 transition"
+            >
+                Back to Home
+            </a>
+        </div>
+    </section>
+    <Footer slot="footer" />
+</Layout>

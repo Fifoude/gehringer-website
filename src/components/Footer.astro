@@ -1,27 +1,45 @@
 ---
-import { siteInfo } from '../config/siteInfo';
+import { siteInfo } from "../config/siteInfo";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getLangFromUrl, useTranslations } from "../i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
-<footer class="border-t mt-16 py-10 text-center text-sm text-slate-600 bg-gray-50">
+<footer
+  class="border-t mt-16 py-10 text-center text-sm text-slate-600 bg-gray-50"
+>
   <p class="mb-3">
-    © {new Date().getFullYear()} <span class="font-semibold text-slate-800">{siteInfo.name}</span>  
-    — Manager de transition certifié <strong>Bilan Carbone®</strong>
+    © {new Date().getFullYear()}
+    <span class="font-semibold text-slate-800">{siteInfo.name}</span>
+    — <span set:html={t("footer.certified")} />
   </p>
 
   <p class="mb-2">
-    <a href={`mailto:${siteInfo.email}`} class="underline hover:text-slate-800 transition">{siteInfo.email}</a>  
+    <a
+      href={`mailto:${siteInfo.email}`}
+      class="underline hover:text-slate-800 transition">{siteInfo.email}</a
+    >
     <span class="mx-2">•</span>
-    <a href={siteInfo.linkedin} target="_blank" class="underline hover:text-slate-800 transition">LinkedIn</a>
+    <a
+      href={siteInfo.linkedin}
+      target="_blank"
+      class="underline hover:text-slate-800 transition">LinkedIn</a
+    >
   </p>
 
   <p class="text-xs text-gray-500 mt-3">
-    Ce site est éco-conçu et hébergé sur une infrastructure à faible empreinte carbone.
+    {t("footer.eco")}
   </p>
 
   <!-- Lien discret vers mentions légales -->
   <p class="mt-4">
-    <a href="/mentions-legales" class="underline hover:text-slate-800 transition text-xs">
-      Mentions légales
+    <a
+      href={getRelativeLocaleUrl(lang, "mentions-legales")}
+      class="underline hover:text-slate-800 transition text-xs"
+    >
+      {t("nav.legal")}
     </a>
   </p>
 </footer>

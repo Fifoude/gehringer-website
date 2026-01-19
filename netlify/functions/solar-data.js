@@ -118,7 +118,7 @@ async function fetchWithTimeout(url, timeout = REQUEST_TIMEOUT) {
  * @param {Object} event - L'événement Netlify
  * @returns {Object} Réponse HTTP
  */
-exports.handler = async (event) => {
+export const handler = async (event) => {
     // En-têtes CORS pour permettre les appels depuis le frontend
     const headers = {
         'Access-Control-Allow-Origin': '*',

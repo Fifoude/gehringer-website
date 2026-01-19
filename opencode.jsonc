@@ -1,0 +1,13 @@
+{
+  "mcp": {
+    "n8n-mcp": {
+      "type": "remote",
+      "url": "https://n8n.gehringer.fr/mcp-server/http",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5MDkyYzE4Yi00MDIxLTRiMzQtYTdkMi1iYTBmZTE0NDJiMzAiLCJpc3MiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6IjExOGZkNGRiLTI5NDMtNDMzMi1hMDlkLTk2OTNjZTExY2M2MiIsImlhdCI6MTc2NDk2Njc4OH0.wmQItUA0LwgLbxve8SqJnM4YEXHKabeB2aprsHVg1hc"
+      }
+    }
+  },
+  "$schema": "https://opencode.ai/config.json"
+}

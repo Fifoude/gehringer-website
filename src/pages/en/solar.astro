@@ -1,30 +1,25 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import Header from "../components/Header.astro";
-import Footer from "../components/Footer.astro";
-import "../styles/solar.css";
-import { getLangFromUrl } from "../i18n/utils";
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import "../../styles/solar.css";
+import { getLangFromUrl } from "../../i18n/utils";
 const lang = getLangFromUrl(Astro.url);
 ---
 
-<Layout title="Tableau de Bord Solaire - Production">
+<Layout title="Solar Dashboard - Production">
     <Header slot="header" />
 
     <div class="solar-container" data-lang={lang}>
         <div class="card">
-            <h1>☀️ Tableau de Bord Solaire</h1>
+            <h1>☀️ Solar Dashboard</h1>
 
             <div class="alert">
                 <div class="alert-title">ℹ️ Information</div>
-                <p>
-                    Naviguez entre les onglets pour explorer les différentes
-                    analyses.
-                </p>
+                <p>Switch between tabs to explore different analyses.</p>
             </div>
 
-            <div id="globalLoading" class="loading">
-                ⏳ Chargement des données...
-            </div>
+            <div id="globalLoading" class="loading">⏳ Loading data...</div>
             <div id="error" class="error"></div>
             <div id="success" class="success"></div>
         </div>
@@ -32,22 +27,22 @@ const lang = getLangFromUrl(Astro.url);
         <div id="dataSection" class="data-section card">
             <div class="tabs">
                 <div class="tab active" data-tab="production">
-                    Production & Prévisions
+                    Production & Forecasts
                 </div>
-                <div class="tab" data-tab="energy">Flux Énergétiques</div>
-                <div class="tab" data-tab="balance">Performance Mensuelle</div>
-                <div class="tab" data-tab="solar">Précision Historique</div>
+                <div class="tab" data-tab="energy">Energy Flows</div>
+                <div class="tab" data-tab="balance">Monthly Performance</div>
+                <div class="tab" data-tab="solar">Historical Accuracy</div>
             </div>
 
             <div id="productionTab" class="tab-content active">
-                <h2>Production & Prévisions du jour</h2>
+                <h2>Today's Production & Forecasts</h2>
                 <div class="stats-container">
                     <div id="productionTotal" class="stat-card">
-                        <div class="stat-label">Production Totale</div>
+                        <div class="stat-label">Total Production</div>
                         <div class="stat-value">-- kWh</div>
                     </div>
                     <div id="forecastTotal" class="stat-card">
-                        <div class="stat-label">Prévision Totale</div>
+                        <div class="stat-label">Total Forecast</div>
                         <div class="stat-value">-- kWh</div>
                     </div>
                 </div>
@@ -58,38 +53,38 @@ const lang = getLangFromUrl(Astro.url);
             </div>
 
             <div id="energyTab" class="tab-content">
-                <h2>Flux Énergétiques du jour</h2>
+                <h2>Today's Energy Flows</h2>
                 <div class="stats-container">
                     <div id="energyProductionTotal" class="stat-card">
-                        <div class="stat-label">Production Totale</div>
+                        <div class="stat-label">Total Production</div>
                         <div class="stat-value">-- kWh</div>
                     </div>
                     <div id="energyConsumptionTotal" class="stat-card">
-                        <div class="stat-label">Consommation Totale</div>
+                        <div class="stat-label">Total Consumption</div>
                         <div class="stat-value">-- kWh</div>
                     </div>
                     <div id="energyNetGridTotal" class="stat-card">
-                        <div class="stat-label">Flux Réseau</div>
+                        <div class="stat-label">Grid Flow</div>
                         <div class="stat-value">-- kWh</div>
                     </div>
                 </div>
                 <div class="chart-container chart-with-y-labels">
                     <div class="y-axis-label y-axis-top">Production</div>
                     <div class="y-axis-label y-axis-middle">kWh</div>
-                    <div class="y-axis-label y-axis-bottom">Consommation</div>
+                    <div class="y-axis-label y-axis-bottom">Consumption</div>
                     <canvas id="energyChart"></canvas>
                 </div>
             </div>
 
             <div id="balanceTab" class="tab-content">
-                <h2>Performance Mensuelle</h2>
+                <h2>Monthly Performance</h2>
                 <div class="chart-container">
                     <canvas id="balanceChart"></canvas>
                 </div>
             </div>
 
             <div id="solarTab" class="tab-content">
-                <h2>Précision Historique</h2>
+                <h2>Historical Accuracy</h2>
                 <div class="chart-container">
                     <canvas id="solarChart"></canvas>
                 </div>
@@ -100,6 +95,6 @@ const lang = getLangFromUrl(Astro.url);
     <Footer slot="footer" />
 
     <script>
-        import "../scripts/solar-charts.js";
+        import "../../scripts/solar-charts.js";
     </script>
 </Layout>

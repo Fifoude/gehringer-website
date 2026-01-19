@@ -24,6 +24,30 @@ let energyChartInstance = null;
 let balanceChartInstance = null;
 let solarChartInstance = null;
 
+const lang = document.querySelector('.solar-container')?.dataset.lang || 'fr';
+const isEn = lang === 'en';
+
+const l = {
+    prod: isEn ? 'Production (kWh)' : 'Production (kWh)',
+    forecast: isEn ? 'Forecast (kWh)' : 'Prévision (kWh)',
+    solarNoon: isEn ? 'Solar Noon' : 'Midi Solaire',
+    night: isEn ? 'Night' : 'Nuit',
+    hourLabel: isEn ? 'Hour of day' : 'Heure de la journée',
+    lastUpdate: isEn ? 'Last update' : 'Dernière mise à jour',
+    produced: isEn ? 'Production' : 'Production',
+    consumed: isEn ? 'Consumption' : 'Consommation',
+    gridFlux: isEn ? 'Grid Flux' : 'Flux Réseau',
+    balance: isEn ? 'Grid Balance' : 'Solde Réseau',
+    export: isEn ? 'Export' : 'Export',
+    import: isEn ? 'Import' : 'Import',
+    balanceZero: isEn ? 'Balance' : 'Équilibre',
+    autocons: isEn ? 'Self-consumption (%)' : 'Autoconsommation (%)',
+    autosuff: isEn ? 'Self-sufficiency (%)' : 'Autosuffisance (%)',
+    deviation: isEn ? 'Forecast vs Real Deviation (%)' : 'Écart Prévision vs Réel (%)',
+    errorNetwork: isEn ? 'Network error' : 'Erreur réseau',
+    errorInvalid: isEn ? 'Invalid data received' : 'Données invalides reçues'
+};
+
 // ============================================================================
 // HELPERS
 // ============================================================================
@@ -70,41 +94,46 @@ function showError(message) {
     setTimeout(() => errorEl?.classList.remove('visible'), 5000);
 }
 
-function showSuccess(message) {
-    const successEl = document.getElementById('success');
-    const errorEl = document.getElementById('error');
-    if (successEl) {
-        successEl.textContent = '✅ ' + message;
-        successEl.classList.add('visible');
-    }
-    if (errorEl) errorEl.classList.remove('visible');
-    setTimeout(() => successEl?.classList.remove('visible'), 5000);
-}
+
 
 // ============================================================================
 // DATA FETCHING
 // ============================================================================
 
 async function fetchData(type, date) {
-    console.log(`📡 Fetching: type=${type}, date=${date}`);
+    console.log(`📡 FetchData start: type=${type}, date=${date}`);
 
-    const response = await fetch(
-        `/.netlify/functions/solar-data?type=${type}&date=${date}`
-    );
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Erreur réseau' }));
-        throw new Error(error.error || `Erreur HTTP ${response.status}`);
+        console.log(`🌐 Fetching URL: /.netlify/functions/solar-data?type=${type}&date=${date}`);
+        const response = await fetch(
+            `/.netlify/functions/solar-data?type=${type}&date=${date}`,
+            { signal: controller.signal }
+        );
+        clearTimeout(timeoutId);
+
+        console.log(`📥 Response status: ${response.status} ${response.statusText}`);
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Erreur réseau ou réponse non-JSON' }));
+            console.error(`❌ Fetch error for ${type}:`, error);
+            throw new Error(error.error || `Erreur HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log(`✅ Data received for ${type}:`, result);
+
+        if (!result.success || !result.data) {
+            throw new Error('Données invalides reçues');
+        }
+
+        return result.data;
+    } catch (err) {
+        console.error(`💥 FetchData exception for ${type}:`, err);
+        throw err;
     }
-
-    const result = await response.json();
-    console.log(`✅ Data received for ${type}:`, result);
-
-    if (!result.success || !result.data) {
-        throw new Error('Données invalides reçues');
-    }
-
-    return result.data;
 }
 
 // ============================================================================
@@ -190,7 +219,7 @@ function renderProductionChart(hourlyData, astroData) {
             labels: hours,
             datasets: [
                 {
-                    label: 'Production (kWh)',
+                    label: l.prod,
                     data: production,
                     borderColor: '#667eea',
                     backgroundColor: 'rgba(102, 126, 234, 0.2)',
@@ -204,7 +233,7 @@ function renderProductionChart(hourlyData, astroData) {
                     order: 1
                 },
                 {
-                    label: 'Prévision (kWh)',
+                    label: l.forecast,
                     data: forecast,
                     borderColor: '#fbbf24',
                     backgroundColor: 'rgba(251, 191, 36, 0.1)',
@@ -252,7 +281,7 @@ function renderProductionChart(hourlyData, astroData) {
                             borderDash: [6, 6],
                             label: {
                                 display: true,
-                                content: 'Midi Solaire',
+                                content: l.solarNoon,
                                 position: 'start',
                                 backgroundColor: '#f59e0b',
                                 color: '#fff',
@@ -268,7 +297,7 @@ function renderProductionChart(hourlyData, astroData) {
                             borderWidth: 0,
                             label: {
                                 display: true,
-                                content: 'Nuit',
+                                content: l.night,
                                 position: { x: 'center', y: 'start' },
                                 color: '#666',
                                 font: { size: 10 }
@@ -282,7 +311,7 @@ function renderProductionChart(hourlyData, astroData) {
                             borderWidth: 0,
                             label: {
                                 display: true,
-                                content: 'Nuit',
+                                content: l.night,
                                 position: { x: 'center', y: 'start' },
                                 color: '#666',
                                 font: { size: 10 }
@@ -294,7 +323,7 @@ function renderProductionChart(hourlyData, astroData) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: { display: true, text: 'Production Horaire (kWh)', font: { size: 13, weight: 'bold' } },
+                    title: { display: true, text: l.prod, font: { size: 13, weight: 'bold' } },
                     ticks: { color: '#666' },
                     grid: { color: 'rgba(0,0,0,0.05)' }
                 },
@@ -302,7 +331,7 @@ function renderProductionChart(hourlyData, astroData) {
                     type: 'linear',
                     min: 0,
                     max: 23,
-                    title: { display: true, text: 'Heure de la journée', font: { size: 13, weight: 'bold' } },
+                    title: { display: true, text: l.hourLabel, font: { size: 13, weight: 'bold' } },
                     ticks: { color: '#666', callback: function (value) { return `${value}h`; }, stepSize: 2 },
                     grid: { color: 'rgba(0,0,0,0.05)' }
                 }
@@ -315,7 +344,7 @@ function renderProductionChart(hourlyData, astroData) {
         const date = new Date(lastUpdate);
         const timestampEl = document.getElementById('chartTimestamp');
         if (timestampEl) {
-            timestampEl.textContent = `Dernière mise à jour: ${date.toLocaleString('fr-FR')}`;
+            timestampEl.textContent = `${l.lastUpdate}: ${date.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US')}`;
         }
     }
 }
@@ -401,7 +430,7 @@ function renderEnergyChart(hourlyData) {
             labels: hours,
             datasets: [
                 {
-                    label: 'Production',
+                    label: l.produced,
                     data: produced,
                     borderColor: '#10b981',
                     backgroundColor: 'rgba(16, 185, 129, 0.2)',
@@ -414,7 +443,7 @@ function renderEnergyChart(hourlyData) {
                     pointBorderWidth: 2
                 },
                 {
-                    label: 'Consommation',
+                    label: l.consumed,
                     data: consumedNegative,
                     borderColor: '#ef4444',
                     backgroundColor: 'rgba(239, 68, 68, 0.2)',
@@ -427,7 +456,7 @@ function renderEnergyChart(hourlyData) {
                     pointBorderWidth: 2
                 },
                 {
-                    label: 'Flux Réseau',
+                    label: l.gridFlux,
                     data: netGrid,
                     borderColor: '#8b5cf6',
                     backgroundColor: function (context) {
@@ -474,17 +503,17 @@ function renderEnergyChart(hourlyData) {
 
                             // For consumption, show positive value with explanation
                             if (context.datasetIndex === 1) {
-                                return `Consommation: ${absValue.toFixed(2)} kWh`;
+                                return `${l.consumed}: ${absValue.toFixed(2)} kWh`;
                             }
 
                             // For net grid, add context
                             if (context.datasetIndex === 2) {
                                 if (value > 0) {
-                                    return `Solde Réseau: +${value.toFixed(2)} kWh (Export)`;
+                                    return `${l.balance}: +${value.toFixed(2)} kWh (${l.export})`;
                                 } else if (value < 0) {
-                                    return `Solde Réseau: ${value.toFixed(2)} kWh (Import)`;
+                                    return `${l.balance}: ${value.toFixed(2)} kWh (${l.import})`;
                                 } else {
-                                    return `Solde Réseau: 0.00 kWh (Équilibre)`;
+                                    return `${l.balance}: 0.00 kWh (${l.balanceZero})`;
                                 }
                             }
 
@@ -535,7 +564,7 @@ function renderEnergyChart(hourlyData) {
                     type: 'linear',
                     min: 0,
                     max: maxHour,
-                    title: { display: true, text: 'Heure de la journée', font: { size: 13, weight: 'bold' } },
+                    title: { display: true, text: l.hourLabel, font: { size: 13, weight: 'bold' } },
                     ticks: { color: '#666', callback: function (value) { return `${value}h`; }, stepSize: 2 },
                     grid: { color: 'rgba(0,0,0,0.05)' }
                 }
@@ -569,13 +598,13 @@ function renderBalanceChart(historyData) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Autoconsommation (%)',
+                    label: l.autocons,
                     data: autoconsommation,
                     backgroundColor: '#eab308', // Yellow/Gold
                     borderRadius: 4,
                 },
                 {
-                    label: 'Autosuffisance (%)',
+                    label: l.autosuff,
                     data: autosuffisance,
                     backgroundColor: '#3b82f6', // Blue
                     borderRadius: 4,
@@ -634,7 +663,7 @@ function renderAccuracyChart(historyData) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Écart Prévision vs Réel (%)',
+                    label: l.deviation,
                     data: deviation,
                     backgroundColor: (context) => {
                         const value = context.raw;
@@ -792,19 +821,26 @@ function renderTab(tabName) {
 // INITIALIZATION
 // ============================================================================
 
-document.addEventListener('DOMContentLoaded', async () => {
+const init = async () => {
     console.log('🚀 Initializing Solar Dashboard with Charts...');
 
     // Setup tab click handlers
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', async () => {
             const tabName = tab.dataset.tab;
+            console.log(`📑 Tab clicked: ${tabName}`);
 
             // Update UI
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             tab.classList.add('active');
-            document.getElementById(tabName + 'Tab').classList.add('active');
+
+            const targetContent = document.getElementById(tabName + 'Tab');
+            if (targetContent) {
+                targetContent.classList.add('active');
+            } else {
+                console.warn(`⚠️ Tab content not found: ${tabName}Tab`);
+            }
 
             // Load tab data
             await loadTab(tabName);
@@ -812,5 +848,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Auto-load production tab
-    await loadTab('production');
-});
+    console.log('🏁 Auto-loading production tab...');
+    try {
+        await loadTab('production');
+        console.log('✅ Initial load complete');
+    } catch (e) {
+        console.error('❌ Initial load failed:', e);
+    }
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    // DOM already loaded, maybe due to fast bundling or hot reload
+    init();
+}

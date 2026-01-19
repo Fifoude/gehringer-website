@@ -1,0 +1,469 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Header from "../../../components/Header.astro";
+import Footer from "../../../components/Footer.astro";
+---
+
+<Layout
+    title="Intervention Situations — Gehringer Consulting"
+    description="Discover the situations I intervene in: transition management, performance steering, AI, and ecological transition."
+>
+    <Header slot="header" />
+
+    <main class="overflow-hidden">
+        <!-- Hero Section -->
+        <section class="relative pt-20 pb-16 md:pt-24 md:pb-20 bg-slate-50">
+            <div class="max-w-5xl mx-auto px-6 relative z-10 text-center">
+                <h1 class="text-4xl md:text-6xl font-bold text-slate-900 mb-6">
+                    Intervention <span class="text-slate-500">situations</span>
+                </h1>
+                <p
+                    class="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed"
+                >
+                    I don't provide <span class="text-slate-900 font-medium"
+                        >“standard services”</span
+                    >. I intervene in complex managerial situations, when the
+                    organization needs temporary, experienced, and operational
+                    support.
+                </p>
+            </div>
+            <div
+                class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"
+            >
+            </div>
+        </section>
+
+        <!-- Intervention Areas -->
+        <section class="py-24">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <!-- 1. Transition Management -->
+                    <div
+                        class="md:col-span-2 group p-8 md:p-12 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden"
+                    >
+                        <div
+                            class="absolute top-0 right-0 p-8 text-slate-50 opacity-10"
+                        >
+                            <span class="text-9xl font-bold">1</span>
+                        </div>
+
+                        <div class="relative z-10">
+                            <div class="flex flex-col lg:flex-row gap-12">
+                                <!-- Main Management Content -->
+                                <div class="flex-1">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center mb-8 shadow-lg shadow-slate-200"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="24"
+                                            height="24"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            ><path
+                                                d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                                            ></path><circle cx="9" cy="7" r="4"
+                                            ></circle><path
+                                                d="M22 21v-2a4 4 0 0 0-3-3.87"
+                                            ></path><path
+                                                d="M16 3.13a4 4 0 0 1 0 7.75"
+                                            ></path></svg
+                                        >
+                                    </div>
+                                    <h2
+                                        class="text-3xl font-bold text-slate-900 mb-6 uppercase tracking-tight"
+                                    >
+                                        Transition Management
+                                    </h2>
+                                    <ul class="space-y-4 mb-8">
+                                        {
+                                            [
+                                                "Rapid takeover of executive roles",
+                                                "Stabilization of organizations under tension",
+                                                "Performance turnaround",
+                                                "Steering structural transformations",
+                                            ].map((item) => (
+                                                <li class="flex items-start gap-3 text-slate-600">
+                                                    <span class="mt-2 h-1 w-4 rounded-full bg-slate-300 flex-shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))
+                                        }
+                                    </ul>
+                                    <p
+                                        class="text-slate-900 font-bold flex items-center gap-2 pt-6 border-t border-slate-50"
+                                    >
+                                        <span class="text-slate-400">👉</span> Objective:
+                                        reclaim control of the situation.
+                                    </p>
+                                </div>
+
+                                <!-- 3. IA (The technology lever) -->
+                                <div
+                                    class="lg:w-1/3 p-8 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col"
+                                >
+                                    <div
+                                        class="inline-flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-4"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            ><path d="M12 8V4H8"></path><rect
+                                                width="16"
+                                                height="12"
+                                                x="4"
+                                                y="8"
+                                                rx="2"></rect><path d="M2 14h2"
+                                            ></path><path d="M20 14h2"
+                                            ></path></svg
+                                        >
+                                        The technological lever
+                                    </div>
+                                    <h3
+                                        class="text-lg font-bold text-slate-800 mb-6 group-hover:text-slate-900 transition-colors uppercase tracking-tight"
+                                    >
+                                        AI & Management
+                                    </h3>
+                                    <ul
+                                        class="space-y-4 text-sm text-slate-500 mb-auto"
+                                    >
+                                        {
+                                            [
+                                                "Data structuring support",
+                                                "Automation of low-value tasks",
+                                                "Decision and projection support",
+                                                "Reasoned and controlled use of AI",
+                                            ].map((item) => (
+                                                <li class="flex items-start gap-2">
+                                                    <span class="mt-1.5 h-1 w-1 rounded-full bg-slate-400 flex-shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))
+                                        }
+                                    </ul>
+                                    <div
+                                        class="mt-6 pt-4 border-t border-slate-200/50"
+                                    >
+                                        <p
+                                            class="text-xs italic text-slate-400 leading-relaxed font-medium"
+                                        >
+                                            "AI is a tool, not a promise."
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Steering & Performance -->
+                    <div
+                        class="group p-8 md:p-12 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden"
+                    >
+                        <div
+                            class="absolute top-0 right-0 p-8 text-slate-50 opacity-10 group-hover:scale-110 transition-transform"
+                        >
+                            <span class="text-9xl font-bold">2</span>
+                        </div>
+                        <div class="relative z-10">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-slate-800 text-white flex items-center justify-center mb-8 shadow-lg shadow-slate-200"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    ><path d="M3 3v18h18"></path><path
+                                        d="m19 9-5 5-4-4-3 3"></path></svg
+                                >
+                            </div>
+                            <h2
+                                class="text-2xl font-bold text-slate-900 mb-6 uppercase tracking-tight"
+                            >
+                                Steering & Performance
+                            </h2>
+                            <ul class="space-y-4">
+                                {
+                                    [
+                                        "Clarification of priorities",
+                                        "Implementation of useful indicators",
+                                        "Decision support in uncertain contexts",
+                                        "Economic and organizational trade-offs",
+                                    ].map((item) => (
+                                        <li class="flex items-start gap-3 text-slate-600">
+                                            <span class="mt-2 h-1 w-4 rounded-full bg-slate-300 flex-shrink-0" />
+                                            <span>{item}</span>
+                                        </li>
+                                    ))
+                                }
+                            </ul>
+                            <div class="mt-10 pt-6 border-t border-slate-50">
+                                <p
+                                    class="text-slate-900 font-semibold flex items-center gap-2"
+                                >
+                                    <span class="text-slate-400">👉</span> Objective:
+                                    decide better, plus vite, collectively.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Ecological Transition -->
+                    <div
+                        class="group p-8 md:p-12 rounded-[2.5rem] bg-emerald-50 border border-emerald-100 shadow-sm hover:shadow-xl transition-all duration-500 relative overflow-hidden"
+                    >
+                        <div class="relative z-10">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center mb-8 shadow-lg shadow-emerald-200"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    ><path
+                                        d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"
+                                    ></path><path
+                                        d="M2 21c0-3 1.85-5.36 5.08-6C10 14.5 10.5 13.84 10.5 11"
+                                    ></path></svg
+                                >
+                            </div>
+                            <h2
+                                class="text-2xl font-bold text-slate-900 mb-6 uppercase tracking-tight text-emerald-900"
+                            >
+                                Ecological Transition
+                            </h2>
+                            <ul class="space-y-4">
+                                {
+                                    [
+                                        "Execution or leverage of Carbon Footprints®",
+                                        "Integration of carbon issues into steering",
+                                        "Regulatory anticipation",
+                                        "Performance and environment consistency",
+                                    ].map((item) => (
+                                        <li class="flex items-start gap-3 text-emerald-800">
+                                            <span class="mt-2 h-1 w-4 rounded-full bg-emerald-300 flex-shrink-0" />
+                                            <span class="opacity-80 font-medium">
+                                                {item}
+                                            </span>
+                                        </li>
+                                    ))
+                                }
+                            </ul>
+                            <div class="mt-10 pt-6 border-t border-emerald-100">
+                                <p
+                                    class="text-emerald-900 font-bold flex items-center gap-2"
+                                >
+                                    <span class="text-emerald-500">👉</span> A global
+                                    strategic lever.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Tailored Support -->
+        <section class="py-24 bg-white border-y border-slate-100">
+            <div class="max-w-5xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">
+                        Support tailored to each situation
+                    </h2>
+                    <p class="text-slate-500 italic">
+                        Each intervention is built according to the real
+                        context, priority issues, and urgency.
+                    </p>
+                </div>
+
+                <div
+                    class="bg-slate-50 rounded-[3rem] p-8 md:p-16 border border-slate-200 shadow-inner"
+                >
+                    <div class="flex flex-col md:flex-row gap-12 items-center">
+                        <div class="flex-1 space-y-6">
+                            <div
+                                class="inline-block p-2 px-4 rounded-full bg-white border border-slate-200 text-sm font-semibold text-slate-600 mb-2"
+                            >
+                                Innovation: Chatbot Assistant
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-900">
+                                The AI chatbot on the site allows you to:
+                            </h3>
+                            <ul class="space-y-3">
+                                <li class="flex items-center gap-3">
+                                    <div
+                                        class="w-6 h-6 rounded-full bg-slate-900 text-white text-[10px] flex items-center justify-center font-bold"
+                                    >
+                                        1
+                                    </div>
+                                    <span class="text-slate-700"
+                                        >Analyze your request in real time</span
+                                    >
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <div
+                                        class="w-6 h-6 rounded-full bg-slate-900 text-white text-[10px] flex items-center justify-center font-bold"
+                                    >
+                                        2
+                                    </div>
+                                    <span class="text-slate-700"
+                                        >Prepare a targeted CV or tailored
+                                        proposal for an exchange</span
+                                    >
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <div
+                                        class="w-6 h-6 rounded-full bg-slate-900 text-white text-[10px] flex items-center justify-center font-bold"
+                                    >
+                                        3
+                                    </div>
+                                    <span class="text-slate-700"
+                                        >Prequalify your situation before our
+                                        exchange</span
+                                    >
+                                </li>
+                            </ul>
+                        </div>
+                        <div
+                            class="w-full md:w-64 aspect-square bg-white rounded-2xl shadow-xl flex items-center justify-center border border-slate-100 group cursor-pointer"
+                            onclick="document.querySelector('[data-chat-toggle]').click()"
+                        >
+                            <div class="text-center">
+                                <div
+                                    class="w-16 h-16 rounded-full bg-slate-900 text-white mx-auto flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="32"
+                                        height="32"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        ><path
+                                            d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"
+                                        ></path></svg
+                                    >
+                                </div>
+                                <span class="text-sm font-bold text-slate-900"
+                                    >Try the assistant</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="py-24 bg-slate-900 text-white relative overflow-hidden">
+            <div
+                class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none"
+            >
+                <svg
+                    width="100%"
+                    height="100%"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <defs>
+                        <pattern
+                            id="grid"
+                            width="40"
+                            height="40"
+                            patternUnits="userSpaceOnUse"
+                        >
+                            <path
+                                d="M 40 0 L 0 0 0 40"
+                                fill="none"
+                                stroke="white"
+                                stroke-width="1"></path>
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid)"></rect>
+                </svg>
+            </div>
+            <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+                <h2 class="text-3xl font-bold mb-6 italic">
+                    "These are situations where not deciding is already a
+                    decision."
+                </h2>
+                <a
+                    href="/en/contact"
+                    class="inline-flex items-center gap-3 bg-white text-slate-900 px-10 py-5 rounded-2xl font-bold text-lg hover:bg-slate-100 transition shadow-xl group"
+                >
+                    Ready to act?
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="group-hover:translate-x-1 transition-transform"
+                        ><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"
+                        ></path></svg
+                    >
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <Footer slot="footer" />
+
+    <style>
+        section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+
+    <script>
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add("visible");
+                    }
+                });
+            },
+            { threshold: 0.1 },
+        );
+
+        document.querySelectorAll("section").forEach((section) => {
+            observer.observe(section);
+        });
+    </script>
+</Layout>

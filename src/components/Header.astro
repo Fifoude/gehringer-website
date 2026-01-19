@@ -1,5 +1,25 @@
 ---
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getLangFromUrl, useTranslations } from "../i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 const currentPath = Astro.url.pathname;
+
+// Helper simple pour le basculement de langue
+// Si on est en "fr" (default), le path est /quelque-chose
+// Si on est en "en", le path est /en/quelque-chose
+function getSwitchUrl(currentLang: string, url: URL) {
+  const path = url.pathname;
+  if (currentLang === "fr") {
+    return `/en${path === "/" ? "" : path}`;
+  } else {
+    return path.replace(/^\/en/, "") || "/";
+  }
+}
+
+const switchUrl = getSwitchUrl(lang, Astro.url);
+const switchLabel = lang === "fr" ? "EN" : "FR";
 ---
 
 <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
@@ -7,49 +27,66 @@ const currentPath = Astro.url.pathname;
     class="max-w-5xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0"
   >
     <!-- Logo / Titre -->
-    <a href="/" class="flex items-baseline space-x-2">
+    <a
+      href={getRelativeLocaleUrl(lang, "/")}
+      class="flex items-baseline space-x-2"
+    >
       <span class="font-logo text-2xl leading-none">Gehringer</span>
-      <span class="text-sm uppercase tracking-wide text-slate-300">Conseil</span
+      <span class="text-sm uppercase tracking-wide text-slate-300"
+        >{t("site.logoSuffix")}</span
       >
     </a>
 
     <!-- Navigation -->
-    <nav class="space-x-4 text-sm font-medium text-center md:text-left">
+    <nav class="flex items-center space-x-6 text-sm font-medium">
+      <div class="hidden md:flex space-x-6">
+        <a
+          href={getRelativeLocaleUrl(lang, "/")}
+          class={`hover:text-slate-300 transition ${
+            currentPath === getRelativeLocaleUrl(lang, "/") ||
+            (lang === "fr" && currentPath === "/")
+              ? "text-amber-400 underline"
+              : ""
+          }`}
+        >
+          {t("nav.home")}
+        </a>
+        <a
+          href={getRelativeLocaleUrl(lang, "situations-intervention")}
+          class={`hover:text-slate-300 transition ${
+            currentPath.includes("situations-intervention")
+              ? "text-amber-400 underline"
+              : ""
+          }`}
+        >
+          {t("nav.interventions")}
+        </a>
+        <a
+          href={getRelativeLocaleUrl(lang, "approche-experience")}
+          class={`hover:text-slate-300 transition ${
+            currentPath.includes("approche-experience")
+              ? "text-amber-400 underline"
+              : ""
+          }`}
+        >
+          {t("nav.approach")}
+        </a>
+        <a
+          href={getRelativeLocaleUrl(lang, "contact")}
+          class={`hover:text-slate-300 transition ${
+            currentPath.includes("contact") ? "text-amber-400 underline" : ""
+          }`}
+        >
+          {t("nav.contact")}
+        </a>
+      </div>
+
+      <!-- Language Switcher -->
       <a
-        href="/"
-        class={`hover:text-slate-300 transition ${
-          currentPath === "/" ? "text-amber-400 underline" : ""
-        }`}
+        href={switchUrl}
+        class="border border-slate-600 rounded px-2 py-1 hover:bg-slate-800 transition text-xs font-bold text-amber-500"
       >
-        Accueil
-      </a>
-      <a
-        href="/situations-intervention"
-        class={`hover:text-slate-300 transition ${
-          currentPath === "/situations-intervention"
-            ? "text-amber-400 underline"
-            : ""
-        }`}
-      >
-        Interventions
-      </a>
-      <a
-        href="/approche-experience"
-        class={`hover:text-slate-300 transition ${
-          currentPath === "/approche-experience"
-            ? "text-amber-400 underline"
-            : ""
-        }`}
-      >
-        Approche
-      </a>
-      <a
-        href="/contact"
-        class={`hover:text-slate-300 transition ${
-          currentPath === "/contact" ? "text-amber-400 underline" : ""
-        }`}
-      >
-        Contact
+        {switchLabel}
       </a>
     </nav>
   </div>

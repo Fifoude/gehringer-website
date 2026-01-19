@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Mic, Paperclip, Loader2, File as FileIcon, StopCircle, Sparkles, Calendar, FileText, ListTodo, Globe, ArrowUp, ShieldCheck } from 'lucide-react';
+import { MessageCircle, X, Send, Mic, Paperclip, Loader2, File as FileIcon, StopCircle, Sparkles, Calendar, ArrowUp, ShieldCheck } from 'lucide-react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { Toaster, toast } from 'sonner';
 import axios from 'axios';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { chatTranslations } from '../i18n/chat';
 
 // Utility for tailwind class merging
 function cn(...inputs) {
@@ -19,15 +20,17 @@ const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAA
  * @param {object} props
  * @param {string} [props.customIcon]
  * @param {string} [props.customText]
+ * @param {'fr' | 'en'} [props.lang]
  */
-export default function ChatWidget({ customIcon = '', customText = '' }) {
+export default function ChatWidget({ customIcon = '', customText = '', lang = 'fr' }) {
     const [isOpen, setIsOpen] = useState(false);
-    // Initial state has no messages to show the "Welcome" screen first.
-    // We will add the bot greeting only when the conversation "starts" visually or keep it hidden.
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+
+    // Translations
+    const t = chatTranslations[lang] || chatTranslations['fr'];
 
     // Audio Recording State
     const [isRecording, setIsRecording] = useState(false);
@@ -46,7 +49,7 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
     const [otp, setOtp] = useState('');
     const [jwt, setJwt] = useState(null);
     const [turnstileToken, setTurnstileToken] = useState(null);
-    const [pendingMessage, setPendingMessage] = useState(null); // To store message while authenticating
+    const [pendingMessage, setPendingMessage] = useState(null);
 
     const messagesEndRef = useRef(null);
 
@@ -87,7 +90,7 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
             setIsRecording(true);
         } catch (error) {
             console.error('Error accessing microphone:', error);
-            toast.error('Impossible d\'accéder au microphone.');
+            toast.error(t.errors.mic_access);
         }
     };
 
@@ -95,7 +98,6 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
-            // Stop all tracks
             mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
         }
     };
@@ -122,9 +124,9 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
 
             if (response.status === 200) {
                 setAuthState('otp_input');
-                toast.success('Code envoyé par email !');
+                toast.success(t.auth.sent);
             } else {
-                const errorMsg = response.data?.error || 'Erreur lors de l\'initialisation.';
+                const errorMsg = response.data?.error || t.auth.error_init;
                 toast.error(errorMsg);
             }
         } catch (error) {
@@ -149,13 +151,9 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
             });
 
             const rawData = response.data;
-            console.log('Auth Verify Response:', rawData);
-
-            // Handle n8n response which might be an array or object
             const data = Array.isArray(rawData) ? rawData[0] : rawData;
 
             if (response.status === 200 && data && data.accessToken) {
-                // Store Tokens
                 setJwt(data.accessToken);
                 localStorage.setItem('chat_access_token', data.accessToken);
                 if (data.refreshToken) {
@@ -163,9 +161,8 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
                 }
 
                 setAuthState('authenticated');
-                toast.success('Authentification réussie !');
+                toast.success(t.auth.success);
 
-                // If there was a pending message, send it now
                 if (pendingMessage) {
                     sendMessageInternal(pendingMessage.text, pendingMessage.audio, pendingMessage.file, data.accessToken);
                     setPendingMessage(null);
@@ -174,14 +171,11 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
                     setSelectedFile(null);
                 }
             } else {
-                console.error('Token missing in response:', data);
-                // Support both error in 200 OK body or generic error
-                const errorMsg = data.error || 'Code incorrect ou erreur serveur.';
+                const errorMsg = data.error || t.auth.error_verify;
                 toast.error(errorMsg);
             }
         } catch (error) {
             console.error('Auth Verify Error:', error);
-            // Handle axios 4xx/5xx errors
             const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Erreur de vérification.';
             toast.error(errorMsg);
         } finally {
@@ -192,11 +186,11 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
     const handleLogout = () => {
         localStorage.removeItem('chat_access_token');
         localStorage.removeItem('chat_refresh_token');
-        localStorage.removeItem('chat_jwt'); // Cleanup legacy
+        localStorage.removeItem('chat_jwt');
         setJwt(null);
-        setAuthState('email_input'); // Reset to initial state
-        setMessages([]); // Optional: clear history on logout
-        toast.info('Déconnexion réussie.');
+        setAuthState('email_input');
+        setMessages([]);
+        toast.info(t.auth.logout);
     };
 
     const refreshAccessToken = async () => {
@@ -214,7 +208,6 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
             const data = Array.isArray(response.data) ? response.data[0] : response.data;
 
             if (data.accessToken) {
-                console.log('Token refreshed successfully');
                 setJwt(data.accessToken);
                 localStorage.setItem('chat_access_token', data.accessToken);
 
@@ -228,9 +221,8 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
             throw new Error('Failed to refresh token');
         } catch (error) {
             console.error('Refresh token failed:', error);
-            // Force logout
             handleLogout();
-            toast.error('Session expirée. Veuillez vous reconnecter.');
+            toast.error(t.auth.session_expired);
             throw error;
         }
     };
@@ -248,25 +240,23 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
                 file: selectedFile
             });
             setAuthState('email_input');
-            toast.info('Veuillez vous identifier pour envoyer un message.');
+            toast.info(t.errors.login_required);
             return;
         }
 
         await sendMessageInternal(textToSend, audioBlob, selectedFile, jwt);
 
-        // Reset inputs
         setInputValue('');
         setAudioBlob(null);
         setSelectedFile(null);
     };
 
     const sendMessageInternal = async (text, audio, file, token, isRetry = false) => {
-        // Only add user message to UI if it's the first attempt (not a retry)
         if (!isRetry) {
             const newUserMsg = {
                 role: 'user',
                 type: audio ? 'audio' : (file ? 'file' : 'text'),
-                content: text || (audio ? 'Message vocal' : file?.name),
+                content: text || (audio ? t.labels.voice_msg : file?.name),
                 audioUrl: audio ? URL.createObjectURL(audio) : null
             };
             setMessages(prev => [...prev, newUserMsg]);
@@ -276,13 +266,14 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
         setUploadProgress(0);
 
         try {
+            // Note: We are sending the language to the backend
             const formData = new FormData();
             formData.append('action', 'chat-message');
+            formData.append('lang', lang);
             if (text) formData.append('text', text);
             if (audio) formData.append('audio', audio, 'voice_message.webm');
             if (file) formData.append('file', file);
 
-            // History context (simplified)
             const history = messages.map(m => ({ role: m.role, content: m.content }));
             formData.append('history', JSON.stringify(history));
 
@@ -297,13 +288,9 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
                 }
             });
 
-            console.log('N8N Raw Response:', response.data);
             const data = Array.isArray(response.data) ? response.data[0] : response.data;
-            console.log('Processed Data:', data);
 
-            // Check for error in success response (e.g. 401 wrapped)
             if (data.error) {
-                // Check if it's a token error wrapped in 200 OK
                 if (data.error.includes('jwt expired') || data.error.includes('token')) {
                     const error = new Error(data.error);
                     error.response = { status: 401 };
@@ -312,38 +299,33 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
                 throw new Error(data.error);
             }
 
-            // Add bot response
             const textResponse = data.response || data.output;
             if (textResponse || data.audioResponse) {
                 setMessages(prev => [...prev, {
                     role: 'bot',
                     type: data.audioResponse ? 'audio' : 'text',
-                    content: textResponse || 'Message audio reçu',
+                    content: textResponse || t.labels.audio_received,
                     audioUrl: data.audioResponse
                 }]);
             } else {
-                // Fallback if no specific response field
                 setMessages(prev => [...prev, { role: 'bot', type: 'text', content: 'Message reçu.' }]);
             }
 
         } catch (error) {
             console.error('Send Message Error:', error);
 
-            // Handle 401 specifically if token expired
             if ((error.response?.status === 401 || error.message?.includes('jwt expired')) && !isRetry) {
                 console.log('Access token expired, attempting refresh...');
                 try {
                     const newToken = await refreshAccessToken();
-                    // Retry with new token
                     return await sendMessageInternal(text, audio, file, newToken, true);
                 } catch (refreshError) {
-                    // Refresh failed, handled in refreshAccessToken (logout)
                     return;
                 }
             }
 
-            toast.error('Erreur lors de l\'envoi du message.');
-            setMessages(prev => [...prev, { role: 'bot', type: 'text', content: 'Désolé, une erreur est survenue.' }]);
+            toast.error(t.errors.send_error);
+            setMessages(prev => [...prev, { role: 'bot', type: 'text', content: t.errors.generic }]);
         } finally {
             setIsLoading(false);
             setUploadProgress(0);
@@ -352,64 +334,89 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
 
     // --- Render Helpers ---
     const renderWelcomeScreen = () => {
-        // EDITABLE TEXTS
-        const title = "Assistant Gehringer";
-
         return (
-            <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-6 overflow-y-auto">
-                <div className="w-16 h-16 rounded-full bg-white border shadow-sm flex items-center justify-center mb-2">
-                    {customText ? (
-                        <span className="font-logo text-3xl">{customText}</span>
-                    ) : (
-                        <MessageCircle size={32} className="text-slate-900" />
-                    )}
-                </div>
+            <div className="flex-1 overflow-y-auto px-6 py-8 bg-white scrollbar-none">
+                <div className="flex flex-col items-center text-center space-y-6 mb-8">
+                    <div className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-tr from-slate-900 to-slate-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
+                        <div className="relative w-20 h-20 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-2xl">
+                            {customText ? (
+                                <span className="font-logo text-3xl pt-1">{customText}</span>
+                            ) : (
+                                <Sparkles size={40} className="animate-pulse" />
+                            )}
+                        </div>
+                    </div>
 
-                <div className="space-y-2">
-                    <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
-                    <div className="text-sm text-gray-500 max-w-[300px] mx-auto leading-relaxed text-left">
-                        <p>Je peux vous aider à :</p>
-                        <ul className="list-disc pl-4 mt-1 space-y-1">
-                            <li>analyser un document</li>
-                            <li>préparer un échange ciblé avec Philippe</li>
-                            <li>clarifier un besoin ou une problématique managériale...</li>
-                        </ul>
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+                            {t.title}
+                        </h2>
+                        <p className="text-gray-500 text-sm leading-relaxed max-w-[280px] mx-auto">
+                            {t.welcome.intro}
+                        </p>
+                    </div>
+
+                    <div className="w-full grid gap-2">
+                        {[t.welcome.task1, t.welcome.task2, t.welcome.task3].map((task, i) => (
+                            <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl text-left hover:border-slate-200 transition-colors group">
+                                <div className="w-1.5 h-1.5 rounded-full bg-slate-400 group-hover:bg-slate-900 transition-colors"></div>
+                                <span className="text-xs text-slate-600 font-medium group-hover:text-slate-900 transition-colors">{task}</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                <div className="w-full space-y-2">
+                <div className="space-y-3">
                     <button
                         onClick={() => {
-                            setInputValue("Pourriez-vous analyser le document suivant ?");
+                            setInputValue(t.actions.analyze_doc_prompt);
                             fileInputRef.current?.click();
                             setTimeout(() => textareaRef.current?.focus(), 100);
                         }}
-                        className="w-full flex items-center gap-3 p-3 text-left bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-colors group"
+                        className="w-full flex items-center gap-4 p-4 text-left bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md group"
                     >
-                        <span className="text-gray-400 group-hover:text-slate-900 transition-colors"><FileIcon size={18} /></span>
-                        <span className="text-sm text-gray-700 flex-1">Analyser une offre ou une fiche de poste</span>
+                        <div className="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                            <FileIcon size={20} />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold text-slate-800">{t.actions.analyze_doc}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider font-bold">PDF, TXT, LOGS</p>
+                        </div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ArrowUp size={16} className="rotate-45 text-slate-400" />
+                        </div>
                     </button>
 
                     <button
                         onClick={() => {
-                            setInputValue("Évaluer l’adéquation entre le besoin suivant et l’expérience de Philippe : ");
+                            setInputValue(t.actions.evaluate_fit_prompt);
                             setTimeout(() => textareaRef.current?.focus(), 100);
                         }}
-                        className="w-full flex items-center gap-3 p-3 text-left bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-colors group"
+                        className="w-full flex items-center gap-4 p-4 text-left bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md group"
                     >
-                        <span className="text-gray-400 group-hover:text-slate-900 transition-colors"><Sparkles size={18} /></span>
-                        <span className="text-sm text-gray-700 flex-1">Évaluer l’adéquation entre un besoin et l’expérience de Philippe</span>
+                        <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                            <Sparkles size={20} />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold text-slate-800">{t.actions.evaluate_fit}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider font-bold">Matching & Skills</p>
+                        </div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ArrowUp size={16} className="rotate-45 text-slate-400" />
+                        </div>
                     </button>
                 </div>
 
-                {/* Privacy/Local AI Notice */}
-                <div className="pt-2 w-full">
-                    <div className="flex gap-3 items-start p-3 bg-slate-50 border border-slate-100 rounded-xl text-[11px] text-slate-600 text-left">
-                        <ShieldCheck size={16} className="mt-0.5 shrink-0 text-slate-400" />
-                        <p className="leading-relaxed opacity-90">
-                            <strong>IA Locale & confidentielle :</strong> Pour garantir la protection de vos données, cette IA s'exécute localement. Elle est plus lente que les IA Cloud, mais assure une confidentialité totale.
-                        </p>
+                {/* Privacy Notice */}
+                <div className="mt-8 pt-6 border-t border-slate-50 text-center">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-full text-[10px] text-slate-500 font-medium mb-3 shadow-sm border border-slate-200/50">
+                        <ShieldCheck size={12} className="text-emerald-500" />
+                        Local & Secure AI
                     </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed px-4 italic">
+                        {t.privacy}
+                    </p>
                 </div>
             </div>
         );
@@ -417,24 +424,30 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
 
     const renderMessages = () => {
         return (
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50/50 scrollbar-thin">
                 {messages.map((msg, idx) => (
-                    <div key={idx} className={cn("flex", msg.role === 'user' ? "justify-end" : "justify-start")}>
+                    <div key={idx} className={cn("flex animate-in fade-in slide-in-from-bottom-2 duration-300", msg.role === 'user' ? "justify-end" : "justify-start")}>
                         <div className={cn(
-                            "max-w-[85%] p-3 rounded-2xl shadow-sm",
-                            msg.role === 'user' ? "bg-slate-900 text-white rounded-br-none" : "bg-white text-gray-800 border border-gray-200 rounded-bl-none"
+                            "max-w-[85%] p-4 rounded-2xl shadow-sm relative group",
+                            msg.role === 'user'
+                                ? "bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-br-none shadow-slate-200"
+                                : "bg-white text-slate-800 border border-slate-100 rounded-bl-none shadow-slate-200/50"
                         )}>
-                            {msg.type === 'text' && <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>}
+                            {msg.type === 'text' && <p className="text-sm !leading-relaxed whitespace-pre-wrap">{msg.content}</p>}
                             {msg.type === 'audio' && (
-                                <div className="flex flex-col gap-1">
-                                    <p className="text-xs opacity-70">Message vocal</p>
-                                    <audio controls src={msg.audioUrl} className="h-8 w-48" />
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2 text-xs font-semibold opacity-70">
+                                        <Mic size={14} /> {t.labels.voice_msg}
+                                    </div>
+                                    <audio controls src={msg.audioUrl} className="h-8 w-48 custom-audio" />
                                 </div>
                             )}
                             {msg.type === 'file' && (
-                                <div className="flex items-center gap-2">
-                                    <FileIcon size={16} />
-                                    <span className="text-sm truncate">{msg.content}</span>
+                                <div className="flex items-center gap-3 p-2 bg-black/5 rounded-lg border border-black/5">
+                                    <div className="p-2 bg-white rounded-md shadow-sm">
+                                        <FileIcon size={16} className="text-slate-600" />
+                                    </div>
+                                    <span className="text-xs font-medium truncate max-w-[150px]">{msg.content}</span>
                                 </div>
                             )}
                         </div>
@@ -444,18 +457,24 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
                 {/* Upload Progress Bar */}
                 {isLoading && uploadProgress > 0 && uploadProgress < 100 && (
                     <div className="flex justify-end px-4">
-                        <div className="w-[80%] bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                            <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                            <p className="text-xs text-right text-gray-500 mt-1">Envoi... {uploadProgress}%</p>
+                        <div className="w-[80%] bg-slate-200 rounded-full h-2 mb-2 relative overflow-hidden">
+                            <div
+                                class="bg-slate-900 h-full transition-all duration-300 absolute left-0 top-0"
+                                style={{ width: `${uploadProgress}%` }}
+                            ></div>
                         </div>
                     </div>
                 )}
 
                 {isLoading && authState === 'authenticated' && uploadProgress === 0 && (
-                    <div className="flex justify-start">
-                        <div className="bg-white text-gray-500 p-3 rounded-2xl border border-gray-200 rounded-bl-none flex items-center gap-2">
-                            <Loader2 className="animate-spin" size={16} />
-                            <span className="text-sm">Thinking...</span>
+                    <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="bg-white text-slate-400 p-4 rounded-2xl border border-slate-100 rounded-bl-none flex items-center gap-3 shadow-sm shadow-slate-200/50">
+                            <div className="flex gap-1 items-center">
+                                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce"></span>
+                            </div>
+                            <span className="text-xs font-medium tracking-wide uppercase italic">{t.input.thinking}</span>
                         </div>
                     </div>
                 )}
@@ -469,13 +488,13 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
             return (
                 <div className="p-6 flex flex-col gap-6 h-full justify-center">
                     <div className="text-center space-y-2">
-                        <h3 className="text-xl font-semibold text-gray-900">Connexion requise</h3>
-                        <p className="text-sm text-gray-500">Veuillez entrer votre email pour continuer.</p>
+                        <h3 className="text-xl font-semibold text-gray-900">{t.auth.required_title}</h3>
+                        <p className="text-sm text-gray-500">{t.auth.required_desc}</p>
                     </div>
                     <form onSubmit={handleAuthInit} className="flex flex-col gap-4">
                         <input
                             type="email"
-                            placeholder="votre@email.com"
+                            placeholder={t.auth.placeholder_email}
                             className="p-3 border rounded-xl focus:ring-2 focus:ring-slate-900 outline-none transition-all"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -493,14 +512,14 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
                             disabled={isLoading || !turnstileToken}
                             className="bg-slate-900 text-white p-3 rounded-xl hover:bg-slate-800 disabled:opacity-50 transition-colors font-medium"
                         >
-                            {isLoading ? <Loader2 className="animate-spin mx-auto" /> : 'Recevoir le code'}
+                            {isLoading ? <Loader2 className="animate-spin mx-auto" /> : t.auth.get_code}
                         </button>
                         <button
                             type="button"
                             onClick={() => setAuthState('idle')}
                             className="text-xs text-gray-500 hover:underline text-center"
                         >
-                            Annuler
+                            {t.auth.cancel}
                         </button>
                     </form>
                 </div>
@@ -511,8 +530,8 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
             return (
                 <div className="p-6 flex flex-col gap-6 h-full justify-center">
                     <div className="text-center space-y-2">
-                        <h3 className="text-xl font-semibold text-gray-900">Vérification</h3>
-                        <p className="text-sm text-gray-500">Entrez le code reçu par email.</p>
+                        <h3 className="text-xl font-semibold text-gray-900">{t.auth.verify_title}</h3>
+                        <p className="text-sm text-gray-500">{t.auth.verify_desc}</p>
                     </div>
                     <form onSubmit={handleAuthVerify} className="flex flex-col gap-4">
                         <input
@@ -528,14 +547,14 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
                             disabled={isLoading}
                             className="bg-slate-900 text-white p-3 rounded-xl hover:bg-slate-800 disabled:opacity-50 transition-colors font-medium"
                         >
-                            {isLoading ? <Loader2 className="animate-spin mx-auto" /> : 'Vérifier'}
+                            {isLoading ? <Loader2 className="animate-spin mx-auto" /> : t.auth.verify_btn}
                         </button>
                         <button
                             type="button"
                             onClick={() => setAuthState('email_input')}
                             className="text-xs text-gray-500 hover:underline text-center"
                         >
-                            Changer d'email
+                            {t.auth.change_email}
                         </button>
                     </form>
                 </div>
@@ -546,19 +565,22 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
         return (
             <>
                 {/* Header for Chat Window */}
-                <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-100 rounded-t-2xl">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                        <h2 className="font-semibold text-gray-800">Assistant Gehringer</h2>
+                <div className="flex justify-between items-center p-4 bg-white/80 backdrop-blur-md border-b border-slate-100 rounded-t-2xl sticky top-0 z-20">
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                            <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-25"></div>
+                        </div>
+                        <h2 className="font-bold text-slate-800 tracking-tight">{t.title}</h2>
                     </div>
-                    <div className="flex items-center gap-2"> {/* Added a wrapper div for alignment */}
+                    <div className="flex items-center gap-2">
                         {authState === 'authenticated' && (
                             <button
                                 onClick={handleLogout}
                                 className="mr-2 text-xs font-medium text-slate-500 hover:text-red-600 bg-white hover:bg-red-50 px-2 py-1 rounded transition-colors border border-gray-200"
-                                title="Se déconnecter de la session"
+                                title={t.auth.logout}
                             >
-                                Déconnexion
+                                {t.auth.logout}
                             </button>
                         )}
                         <button
@@ -596,7 +618,7 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
                             ref={textareaRef}
                             className="w-full max-h-32 p-3 pb-10 bg-transparent outline-none resize-none text-sm placeholder:text-gray-400"
                             rows={1}
-                            placeholder="Demander, chercher ou créer..."
+                            placeholder={t.input.placeholder}
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={(e) => {
@@ -650,7 +672,7 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
                         </div>
                     </div>
                     <div className="text-center mt-2">
-                        <p className="text-[10px] text-gray-400">L'IA peut faire des erreurs. Vérifiez les informations importantes.</p>
+                        <p className="text-[10px] text-gray-400">{t.input.disclaimer}</p>
                     </div>
                 </div>
             </>
@@ -670,7 +692,7 @@ export default function ChatWidget({ customIcon = '', customText = '' }) {
             <div className="relative group">
                 {/* Tooltip */}
                 <div className="absolute bottom-full right-0 mb-3 w-max max-w-[200px] bg-black text-white text-xs px-3 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none translate-y-2 group-hover:translate-y-0">
-                    Bonjour, c'est l'A.I. de Gehringer
+                    {t.tooltip}
                     {/* Arrow */}
                     <div className="absolute top-full right-6 -mt-1 border-4 border-transparent border-t-black"></div>
                 </div>

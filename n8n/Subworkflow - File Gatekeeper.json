@@ -239,5 +239,12 @@
     "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"
   },
   "id": "wc1gPl32rku4ikBN",
-  "tags": []
+  "tags": [
+    {
+      "updatedAt": "2026-01-12T16:26:32.123Z",
+      "createdAt": "2026-01-12T16:26:32.123Z",
+      "id": "0xE9WHXJKvU4ffh4",
+      "name": "Chatbot"
+    }
+  ]
 }

@@ -1,0 +1,627 @@
+{
+  "name": "Philippe AI Brain (Central - Final Fix)",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1gwPNbMx_ibcwYcR5JKwelIbNbvATSM8m",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "b54afc83-929b-43f8-bfe5-5d73401772a4",
+      "name": "Download Persona (GDrive)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        224,
+        -384
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "fPfn1FHEXnfg0NHA",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1GOiqGdSRB9oKGoTW1G3I8q7RH72ns_ck",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "c2bdedc9-38d9-469d-b9ed-f918fd5dd612",
+      "name": "Download Career Excel (GDrive)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        224,
+        -80
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "fPfn1FHEXnfg0NHA",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Utilisation de l'helper natif n8n pour lire le buffer binaire de manière robuste\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n// Conversion du buffer en texte UTF-8\nconst personaText = buffer.toString('utf-8');\nreturn [{\n  json: {\n    personaContent: personaText,\n    _debug: {\n      length: personaText.length\n    }\n  }\n}];"
+      },
+      "id": "177ada82-1fed-417c-b0e5-ff5594d509c8",
+      "name": "Read Persona Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Récupération de la requête utilisateur\nconst userQuery = $('Input from Parent').first().json.query || '';\n\n// 2. Récupération du Persona\nconst personaNode = $('Read Persona Text').first();\nconst personaData = personaNode ? personaNode.json.personaContent : '';\n\n// 3. Récupération des données Excel via helper\nconst getData = (nodeName) => {\n  try {\n    return $(nodeName).all().map(item => item.json);\n  } catch (e) {\n    return []; \n  }\n};\n\n// Adaptez les noms si nécessaire\nconst experienceData = getData('Parse Experience Data'); \nconst educationData = getData('Parse Education Data');\nconst skillsData = getData('Parse Skills Data');\nconst languagesData = getData('Parse Languages Data'); // Nouveau bloc\n\n// 4. Construction de l'objet Excel consolidé\nconst excelSheets = {\n  experience: experienceData,\n  education: educationData,\n  skills: skillsData,\n  languages: languagesData\n};\n\n// 5. Création du résumé textuel pour le LLM\nconst excelSummary = `Données chargées : \n- Expériences : ${experienceData.length}\n- Formations : ${educationData.length}\n- Compétences : ${skillsData.length}\n- Langues : ${languagesData.length}`;\n\n// 6. Sortie consolidée\nreturn [{\n  json: {\n    user_query: userQuery,\n    persona_content: personaData,\n    excel_data: excelSheets,\n    excel_summary: excelSummary,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "2122cac4-aba7-4c43-ba19-54e784703337",
+      "name": "Consolidate Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_query }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Tu es le cerveau central de l'assistant IA de Philippe Gehringer.\n\nDONNÉES DISPONIBLES :\n{{ $json.excel_summary }}\n\nPERSONA :\n{{ $json.persona_content }}\n\nREQUÊTE UTILISATEUR À ANALYSER :\n{{ $('Input from Parent').first().json.chatInput }}\n\n\nTA MISSION :\nDéterminer l'intention de cette requête.\n\nRÈGLES DE ROUTAGE :\n1. \"expert\" : Si l'utilisateur parle de recrutement, d'offre d'emploi, de CV, de compétences, ou colle une description de poste/URL.\n2. \"conversation\" : Pour tout le reste (salutations, questions sur Philippe, chat général).\n\nFORMAT DE RÉPONSE JSON UNIQUE :\n{ \"branch\": \"expert\" | \"conversation\", \"reasoning\": \"une courte phrase\" }"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "0b96e2fd-3ae9-4392-953a-35b43c81b057",
+      "name": "Router Intelligence (LLM Chain)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1504,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1504,
+        240
+      ],
+      "id": "c9ef1303-95aa-40a7-a666-cf8fabc27bf3",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "pe1RxUmCYaJzcwAP",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Récupération de la décision JSON du LLM\nconst item = items[0].json;\nconst llmResponse = item.output || item.response || item.message?.content || item.text || '';\n\nlet routingDecision;\ntry {\n  const cleanResponse = llmResponse.replace(/```json\\n?|```\\n?/g, '').trim();\n  routingDecision = JSON.parse(cleanResponse);\n} catch (error) {\n  routingDecision = { branch: 'conversation', reasoning: 'Parsing error' };\n}\n\nconst context = $('Consolidate Context').first().json;\n\nreturn [{\n  json: {\n    ...context,\n    routing_branch: routingDecision.branch,\n    routing_reasoning: routingDecision.reasoning\n  }\n}];"
+      },
+      "id": "ab095cef-53ae-4c97-a7b4-deaa37df36ce",
+      "name": "Parse Routing Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": ""
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.routing_branch }}",
+                    "rightValue": "conversation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "conversation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": ""
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.routing_branch }}",
+                    "rightValue": "expert",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "expert"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8b4b7fd2-a583-4377-ba11-1af43e993a8b",
+      "name": "Switch Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        2032,
+        -192
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "37ea5b68-93e2-4f8b-85a6-17924525a716",
+      "name": "Merge Contexts",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1056,
+        -192
+      ],
+      "notes": "Synchronise la branche Persona (Input 1) et la branche Excel (Input 2, via Merge Sheets)"
+    },
+    {
+      "parameters": {},
+      "id": "ff224cb6-eacb-4a42-9a03-45196e67ff54",
+      "name": "Branch: Conversation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2256,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "id": "a04a22a0-bee8-44c5-b3f2-3aee1cb7c9f2",
+      "name": "Merge Sheets",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        800,
+        -32
+      ],
+      "notes": "Append les 3 feuilles Excel (Experience, Education, Skills) pour les synchroniser."
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "sheetName": "experience"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        -208
+      ],
+      "id": "7273c7b5-b3c3-4503-a44f-0f53a4d3267e",
+      "name": "Parse Experience Data"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "sheetName": "education"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        -32
+      ],
+      "id": "4e477874-dfab-458d-9e33-67ed39dd680d",
+      "name": "Parse Education Data"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "sheetName": "skills"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        304
+      ],
+      "id": "d818dd19-e906-4da7-b2ed-53731ea3197e",
+      "name": "Parse Skills Data"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "sheetName": "languages"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        144
+      ],
+      "id": "bb85c263-79b4-4a20-95b7-ac28e5aacdcd",
+      "name": "Parse Languages Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_query }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Tu es un expert en analyse de recrutement.\n\nANALYSE LA REQUÊTE SUIVANTE :\n{{ $('Input from Parent').first().json.chatInput }}\n\nSI C'EST UNE OFFRE D'EMPLOI (texte brut ou structuré) :\nExtrais les informations suivantes en JSON :\n{\n  \"type\": \"offer\",\n  \"job_title\": \"Intitulé du poste\",\n  \"company_name\": \"Nom Entreprise (si mentionné)\",\n  \"key_requirements\": [\"Compétence 1\", \"Compétence 2\"...],\n  \"mission_summary\": \"Résumé succinct de la mission\"\n}\n\nSI C'EST UNE URL (commence par http) :\n{\n  \"type\": \"url\",\n  \"url\": \"...\"\n}\n\nSINON :\n{\n  \"type\": \"other\",\n  \"content\": \"...\"\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "aa22fac7-7390-4a24-b605-290c78eb42e7",
+      "name": "Analyze Job Request",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2240,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Tu es Philippe Gehringer.\n\nCONTEXTE :\nLe message de l'utilisateur contient l'analyse JSON de l'offre d'emploi (Titre, Entreprise, Résumé, Compétences).\nLis ce JSON attentivement.\n\nMON PARCOURS :\n{{ JSON.stringify($('Consolidate Context').first().json.excel_data) }}\n\nTA MISSION :\nUtilise les informations de l'offre contenues dans le message utilisateur ci-dessus pour effectuer le matching.\nEffectue un matching précis (Scoring 0-100) pour CHAQUE expérience de mon parcours par rapport à cette offre.\n\nSORTIE ATTENDUE (JSON) :\n{\n  \"global_fit_score\": 85,\n  \"global_analysis\": \"Analyse globale...\",\n  \"experiences_match\": [\n    {\n      \"id\": \"...\",\n      \"score\": 95,\n      \"relevance\": \"Très pertinent car...\",\n      \"strategy\": \"Mettre en avant\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "0055b313-8c6d-41ab-af52-f5754e860083",
+      "name": "Match & Score Strategy",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2608,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -272,
+        -224
+      ],
+      "id": "70bb798a-f9fa-474f-a3f7-0b45ee317a2d",
+      "name": "Input from Parent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Tu es Philippe Gehringer (l'Assistant IA).\n\nCONTEXTE :\nTu viens d'analyser une opportunité pour toi-même. Voici le résultat technique du matching :\n{{ $json.text }}\n\nTA MISSION :\nRédige une réponse finale pour l'utilisateur (le recruteur ou toi-même) qui présente cette analyse de manière claire, professionnelle et engageante.\n\nSTRUCTURE DE LA RÉPONSE :\n1. **Synthèse Rapide** : Ton avis général et le score d'adéquation (en %). Sois direct.\n2. **Expériences Clés** : Cite les 1 ou 2 expériences les plus pertinentes pour ce poste et explique pourquoi en une phrase.\n3. **Angle d'Attaque** : Propose un angle stratégique pour la candidature (ex: \\\"Miser sur la gestion de crise\\\" ou \\\"Valoriser l'aspect transformation\\\").\n\nTON :\nPro, direct, pragmatique (style Manager de Transition).\nUtilise du Markdown pour la mise en forme (gras, listes)."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "a5a3edc5-a764-4b94-bba9-030eef5c7ea1",
+      "name": "Format Final Response",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2976,
+        -80
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download Persona (GDrive)": {
+      "main": [
+        [
+          {
+            "node": "Read Persona Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Career Excel (GDrive)": {
+      "main": [
+        [
+          {
+            "node": "Parse Experience Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Parse Education Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Parse Languages Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Parse Skills Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Persona Text": {
+      "main": [
+        [
+          {
+            "node": "Merge Contexts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Sheets": {
+      "main": [
+        [
+          {
+            "node": "Merge Contexts",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Contexts": {
+      "main": [
+        [
+          {
+            "node": "Consolidate Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidate Context": {
+      "main": [
+        [
+          {
+            "node": "Router Intelligence (LLM Chain)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router Intelligence (LLM Chain)": {
+      "main": [
+        [
+          {
+            "node": "Parse Routing Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Router Intelligence (LLM Chain)",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Analyze Job Request",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Match & Score Strategy",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Format Final Response",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Routing Decision": {
+      "main": [
+        [
+          {
+            "node": "Switch Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Router": {
+      "main": [
+        [
+          {
+            "node": "Branch: Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze Job Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Experience Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Education Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Sheets",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Parse Languages Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Sheets",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Parse Skills Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Sheets",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Analyze Job Request": {
+      "main": [
+        [
+          {
+            "node": "Match & Score Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input from Parent": {
+      "main": [
+        [
+          {
+            "node": "Download Persona (GDrive)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download Career Excel (GDrive)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match & Score Strategy": {
+      "main": [
+        [
+          {
+            "node": "Format Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "aba28088-97cb-4ab0-9c93-7edd80bc7ab9",
+  "meta": {
+    "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"
+  },
+  "id": "sk0XdwzdY0Zk_ZM-Pso2Z",
+  "tags": []
+}

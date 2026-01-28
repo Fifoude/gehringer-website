@@ -31,5 +31,8 @@ pnpm-debug.log*
 # n8n workflows (may contain hardcoded secrets)
 n8n/
 
+# n8n docs is too big
+docs/
+
 # Some local files (may contain hardcoded secrets)
 SECURITY-NOTES.md

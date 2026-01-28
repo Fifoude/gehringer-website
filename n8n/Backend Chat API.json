@@ -8,13 +8,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "d797f36e-f8b9-4719-b5b6-bcad6107d764",
+      "id": "710e42e7-f70f-4ea1-98f2-d9ca7c943158",
       "name": "Webhook (Entrée Unique)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
         -1792,
-        848
+        2160
       ],
       "webhookId": "d41783e1-c8f6-4aba-bd51-5016acb5582a"
     },
@@ -42,26 +42,26 @@
           ]
         }
       },
-      "id": "65cd214f-8468-4f61-97d8-4fcf5069f225",
+      "id": "3c113445-f66a-40c5-b558-7ceef57ece46",
       "name": "Router (Switch Action)",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
         -1264,
-        800
+        2112
       ]
     },
     {
       "parameters": {
         "jsCode": "const crypto = require('crypto');\n\n// 1. Générer un code à 4 chiffres (pour l'utilisateur)\nconst code = Math.floor(1000 + Math.random() * 9000).toString();\n\n// 2. Créer le hash du code (pour la base de données)\n// On utilise SHA-256 qui est robuste\nconst codeHash = crypto.createHash('sha256').update(code).digest('hex');\n\n// Récupération sécurisée de l'email\nconst body = $('Webhook (Entrée Unique)').first().json.body;\nconst email = body ? body.email : 'no-email-found';\n\nreturn {\n  email: email,\n  generated_code: code,      // NON-HASHÉ : À envoyer par email\n  code_hash: codeHash,       // HASHÉ : À stocker en DB\n  created_at: new Date().toISOString()\n};"
       },
-      "id": "c6c9345e-1dee-4c65-a70c-23b76905664c",
+      "id": "d2dd0bd1-fcfd-444b-b9d2-5de4fae49ebc",
       "name": "Générer Code OTP",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         720,
-        432
+        1744
       ]
     },
     {
@@ -69,13 +69,13 @@
         "mode": "runOnceForEachItem",
         "jsCode": "const crypto = require('crypto');\n\n// 1. Récupération des inputs\nconst webhook = $('Webhook (Entrée Unique)').first().json;\nconst email = webhook.body.email;\nconst receivedCode = String(webhook.body.code).trim(); // Le '1234' tapé par l'utilisateur\n\n// 2. Données stockées (HASHÉES)\nconst storedHash = $json.code; // Attention: la colonne s'appelle toujours 'code' mais contient le hash\nconst storedDate = $json.created_at;\nconst rowId = $json.id;\n\nif (!storedHash) {\n  throw new Error(\"Aucun OTP trouvé pour cet email.\");\n}\n\n// 3. Vérification de l'expiration (5 min)\nconst EXPIRATION_MS = 5 * 60 * 1000;\nconst now = new Date().getTime();\nconst createdAt = new Date(storedDate).getTime();\n\nif (now - createdAt > EXPIRATION_MS) {\n  throw new Error(\"Code OTP expiré. Veuillez en demander un nouveau.\");\n}\n\n// 4. HASHAGE ET COMPARAISON\n// On hashe le code reçu pour voir s'il correspond au hash stocké\nconst receivedCodeHash = crypto.createHash('sha256').update(receivedCode).digest('hex');\n\nif (receivedCodeHash !== storedHash) {\n  throw new Error(\"Code OTP invalide.\");\n}\n\n// 5. Succès\nreturn {\n  email,\n  valid: true,\n  rowIdToDelete: rowId\n};"
       },
-      "id": "20b9c4b6-51b9-4905-a7ae-d8bdc7cc6948",
+      "id": "d83c6509-0517-4be9-8f05-5de6636107bc",
       "name": "Vérifier Code (Mock)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         384,
-        640
+        1952
       ],
       "onError": "continueErrorOutput"
     },
@@ -85,13 +85,13 @@
         "token": "={{ $('Webhook (Entrée Unique)').item.json.headers.authorization.split(' ')[1] }}",
         "options": {}
       },
-      "id": "d6538f68-b245-4d25-bd96-451fbf2ece8d",
+      "id": "7d475c4b-d0b7-4b31-821f-4c970955bf66",
       "name": "Sécurité (Vérifier JWT)",
       "type": "n8n-nodes-base.jwt",
       "typeVersion": 1,
       "position": [
         -912,
-        1600
+        2912
       ],
       "credentials": {
         "jwtAuth": {
@@ -109,13 +109,13 @@
         "binaryPropertyName": "audio",
         "options": {}
       },
-      "id": "90a665c6-9a83-4867-830e-8a1c619a8aa6",
+      "id": "e858ed12-7ebb-4657-a1fc-5bf3cef32834",
       "name": "Whisper (STT)",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1,
       "position": [
         96,
-        1376
+        2688
       ],
       "credentials": {
         "openAiApi": {
@@ -129,13 +129,13 @@
       "parameters": {
         "options": {}
       },
-      "id": "ee7e4b0f-b219-4cc9-80fd-61aef134d796",
+      "id": "ae494def-7b16-4173-8590-b0de706f6427",
       "name": "Réponse Init",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
         1296,
-        432
+        1744
       ]
     },
     {
@@ -144,28 +144,13 @@
         "responseBody": "={{ \n  (() => {\n    // On cherche d'abord si la branche Login a produit quelque chose\n    let data = null;\n    try {\n        const loginItem = $('Générer Refresh Token').last(); \n        if (loginItem && loginItem.json && loginItem.json.accessToken) {\n            data = loginItem.json;\n        }\n    } catch (e) {}\n\n    // Si rien, on cherche dans la branche Refresh\n    if (!data) {\n        try {\n            const refreshItem = $('Générer Refresh Token 1').last();\n            if (refreshItem && refreshItem.json && refreshItem.json.accessToken) {\n                data = refreshItem.json;\n            }\n        } catch (e) {}\n    }\n\n    // Retourne le JSON stringifié (impératif pour ce champ)\n    if (data) {\n        return JSON.stringify({\n            accessToken: data.accessToken,\n            refreshToken: data.refreshToken\n        });\n    }\n    return JSON.stringify({ error: \"Tokens introuvables\" });\n  })()\n}}",
         "options": {}
       },
-      "id": "ccdb0f7e-f07d-48d9-ac08-884bd78bcc90",
+      "id": "c59cdbb2-4cf0-4ce7-83b1-b2e5233c7a3f",
       "name": "Réponse Token",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
         1504,
-        848
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { message: $json.text, output: $json.text, text: $json.text } }}",
-        "options": {}
-      },
-      "id": "76111c16-5398-4a80-bdbe-00d49c3c8aff",
-      "name": "Réponse Chat",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        1840,
-        1504
+        2160
       ]
     },
     {
@@ -184,9 +169,9 @@
       "typeVersion": 2.1,
       "position": [
         1488,
-        432
+        1744
       ],
-      "id": "5a0586a3-4350-41cc-b940-db65c4a716a0",
+      "id": "c3fcd231-82de-4d11-8cec-806839dec3bf",
       "name": "Send email",
       "webhookId": "25e76513-a504-43d5-9a46-87dc60e1b24a",
       "credentials": {
@@ -265,9 +250,9 @@
       "typeVersion": 1,
       "position": [
         896,
-        432
+        1744
       ],
-      "id": "6d2468dc-7210-4660-aa85-3bc6020268fe",
+      "id": "d4f5442a-15f5-4c05-a1f3-314be6022883",
       "name": "Sécu: Stocker Code"
     },
     {
@@ -294,9 +279,9 @@
       "typeVersion": 1,
       "position": [
         208,
-        640
+        1952
       ],
-      "id": "438ff4c4-bfda-493d-84cf-7c35dbaff9b6",
+      "id": "48c6b1c4-6c65-4043-b4f5-498b72ba935f",
       "name": "Get stored OTP code"
     },
     {
@@ -323,9 +308,9 @@
       "typeVersion": 1,
       "position": [
         368,
-        432
+        1744
       ],
-      "id": "8830d52d-e2f8-46c6-a5dc-8492edb4fd53",
+      "id": "73d98f89-7ec7-4b66-a655-c823a20e54a1",
       "name": "Get CRM Contact",
       "alwaysOutputData": true,
       "notes": "Est-ce que l'email existe ?"
@@ -398,9 +383,9 @@
       "typeVersion": 1,
       "position": [
         544,
-        432
+        1744
       ],
-      "id": "67fabe05-1c43-4892-9252-ad9e5b4261e3",
+      "id": "15f6a4db-6446-448b-a8b1-8ee6437777d1",
       "name": "Update CRM",
       "notes": "Màj de CRM"
     },
@@ -412,54 +397,10 @@
       "typeVersion": 2,
       "position": [
         -224,
-        1392
+        2704
       ],
-      "id": "25e42bcc-525c-414c-8589-4377a650a7c2",
+      "id": "3d462e9f-61f5-4eea-a8c5-cceb22304700",
       "name": "Code in JavaScript1"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.text || $('Webhook (Entrée Unique)').item.json.body.text }}",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3,
-      "position": [
-        3536,
-        1696
-      ],
-      "id": "eeffecec-f26c-4c74-ad1e-a017db26a5e1",
-      "name": "AI Agent",
-      "disabled": true,
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4.1-nano",
-          "mode": "list",
-          "cachedResultName": "gpt-4.1-nano"
-        },
-        "builtInTools": {},
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        3536,
-        1504
-      ],
-      "id": "75514fd6-99c3-4d14-84c5-f25187dfdd73",
-      "name": "OpenAI Chat Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "pe1RxUmCYaJzcwAP",
-          "name": "OpenAi account"
-        }
-      },
-      "disabled": true
     },
     {
       "parameters": {
@@ -468,13 +409,13 @@
         "nodeCredentialType": "googleContactsOAuth2Api",
         "options": {}
       },
-      "id": "bc2655db-750e-4114-be78-407b14e14ee5",
+      "id": "ad439dc2-b6c1-4622-905b-7aac76ae9ca1",
       "name": "Get All Groups",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
         624,
-        832
+        2144
       ],
       "credentials": {
         "googleContactsOAuth2Api": {
@@ -504,13 +445,13 @@
         },
         "options": {}
       },
-      "id": "f31aec25-6e81-48ff-8da5-314ff82d216d",
+      "id": "ce9b3512-b843-4995-abde-40d943964a2b",
       "name": "Check Google Contacts",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
         448,
-        832
+        2144
       ],
       "alwaysOutputData": true,
       "retryOnFail": true,
@@ -526,13 +467,13 @@
       "parameters": {
         "jsCode": "const response = $('Check Google Contacts').first().json;\n// The API returns { results: [ { person: { ... } } ] }\n// If no results, 'results' is undefined or empty\nconst person = (response.results && response.results.length > 0) ? response.results[0].person : {};\n\nconst groups = $('Get All Groups').first().json.contactGroups || [];\n\n// Create Map: resourceName -> formattedName\nconst groupMap = {};\ngroups.forEach(g => {\n  groupMap[g.resourceName] = g.formattedName;\n});\n\n// Extract User Memberships (safe access)\nconst rawMemberships = person.memberships || [];\n\nconst labels = rawMemberships.map(m => {\n   const resName = m.contactGroupMembership ? m.contactGroupMembership.contactGroupResourceName : null;\n   return groupMap[resName] || resName;\n}).filter(l => l != null);\n\n// Fallback email if contact not found\n// Note: original email input is needed if person.emailAddresses is empty\nconst verifiedEmail = $('Vérifier Code (Mock)').first().json.email;\nconst googleEmail = (person.emailAddresses && person.emailAddresses.length > 0) ? person.emailAddresses[0].value : null;\n\nreturn {\n  email: googleEmail || verifiedEmail,\n  user_labels: labels\n};"
       },
-      "id": "862e0d38-c4cb-4a2c-81ef-a6fe6a083861",
+      "id": "93a0e6de-5cb0-42e1-8708-4f7ff149fed3",
       "name": "Merge Groups Names",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         800,
-        832
+        2144
       ],
       "onError": "continueRegularOutput"
     },
@@ -596,13 +537,13 @@
           "fallbackOutput": "extra"
         }
       },
-      "id": "401c868c-de35-47db-b16d-8deb7c3595cc",
+      "id": "664d1045-828f-4803-81b6-eb8cb13e47af",
       "name": "Router (Content Type)",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
       "position": [
         -448,
-        1584
+        2896
       ],
       "notesInFlow": false,
       "alwaysOutputData": false
@@ -631,9 +572,9 @@
       "typeVersion": 1,
       "position": [
         544,
-        640
+        1952
       ],
-      "id": "460a74cc-8ad3-49cc-8802-d757ec1417e9",
+      "id": "8e17d6e4-693a-4b75-baa0-612f887ea17f",
       "name": "Supprimé Code Utilisé"
     },
     {
@@ -642,13 +583,13 @@
         "claimsJson": "={\n  \"expiresIn\": 900,\n  \"email\": \"{{ $('Vérifier Code (Mock)').first().json.email }}\",\n  \"user_labels\": \"{{ $('Merge Groups Names').item.json.user_labels }}\"\n}",
         "options": {}
       },
-      "id": "a31bad8a-26dd-4bb2-8714-af1a77e39b4e",
+      "id": "051bc2eb-af4e-4a66-a3b2-d72979f1f5d1",
       "name": "Générer Access Token",
       "type": "n8n-nodes-base.jwt",
       "typeVersion": 1,
       "position": [
         896,
-        640
+        1952
       ],
       "notesInFlow": true,
       "credentials": {
@@ -667,9 +608,9 @@
       "typeVersion": 2,
       "position": [
         1088,
-        640
+        1952
       ],
-      "id": "72f4520d-3559-4b00-938d-c737c3598104",
+      "id": "02183793-9bba-4c30-aca8-232dc4872610",
       "name": "Générer Refresh Token"
     },
     {
@@ -743,9 +684,9 @@
       "typeVersion": 1,
       "position": [
         1296,
-        640
+        1952
       ],
-      "id": "5d772c5c-5e64-4728-9f7c-00ceb72b8ac5",
+      "id": "efc3a8f4-7246-4215-bab7-d3cb47c63cca",
       "name": "Sauvegarder Refresh Token"
     },
     {
@@ -838,9 +779,9 @@
       "typeVersion": 1,
       "position": [
         720,
-        640
+        1952
       ],
-      "id": "bbee28bd-e9af-4931-a66b-b03198cf53e5",
+      "id": "889d56f2-02ed-4675-85bf-aa8fdb34f8a2",
       "name": "Log: Auth Success"
     },
     {
@@ -855,9 +796,9 @@
       "typeVersion": 1.5,
       "position": [
         1488,
-        1088
+        2400
       ],
-      "id": "6438eff2-b7d1-4474-abec-ffa7e780258c",
+      "id": "643319d7-c7bc-44d1-b86f-564e13be7bf7",
       "name": "Erreur Auth"
     },
     {
@@ -951,9 +892,9 @@
       "typeVersion": 1,
       "position": [
         1296,
-        1088
+        2400
       ],
-      "id": "be3fffed-1c67-416a-a7af-6deb6f1a23f3",
+      "id": "2829c145-a35d-424d-9f60-08232fdcffaa",
       "name": "Log: Auth Failed"
     },
     {
@@ -1046,9 +987,9 @@
       "typeVersion": 1,
       "position": [
         -688,
-        1600
+        2912
       ],
-      "id": "9d9539c0-4b8b-4563-83b9-0e91ab60a73a",
+      "id": "a56b8f98-2427-46c3-8694-dd12cbb591e7",
       "name": "Log: Chat Message",
       "notes": "Enregistre la tentative de message dans la table Audit_Logs. Indispensable pour la traçabilité et le monitoring des usages par email et IP."
     },
@@ -1060,9 +1001,9 @@
       "typeVersion": 2,
       "position": [
         1104,
-        1088
+        2400
       ],
-      "id": "935a72f5-fe01-43e1-8b39-87c3d7b1037c",
+      "id": "b1cd7194-fc12-4574-85d1-7e81ed1c2f64",
       "name": "Normaliseur d'Erreur"
     },
     {
@@ -1073,9 +1014,9 @@
       "typeVersion": 2,
       "position": [
         -736,
-        1072
+        2384
       ],
-      "id": "0d20c489-00ba-43c1-9391-986295bbc505",
+      "id": "38b48e24-e671-4151-8f35-bf3d8243fc09",
       "name": "Hash Incoming Token"
     },
     {
@@ -1102,9 +1043,9 @@
       "typeVersion": 1,
       "position": [
         -576,
-        1072
+        2384
       ],
-      "id": "2c7cc506-96c0-4cb8-8df6-f342dea789fd",
+      "id": "170a1edb-fae3-40b6-a1b3-109ea5e3cb2b",
       "name": "Get Refresh Token Info",
       "alwaysOutputData": true
     },
@@ -1116,9 +1057,9 @@
       "typeVersion": 2,
       "position": [
         -400,
-        1072
+        2384
       ],
-      "id": "31211445-5d81-46f8-bb85-6fb8dd192ad9",
+      "id": "87601acc-f5c5-438e-bc4a-ac831dc85d8d",
       "name": "Validate & Rotate"
     },
     {
@@ -1144,9 +1085,9 @@
       "typeVersion": 1,
       "position": [
         -224,
-        1072
+        2384
       ],
-      "id": "6bdb6fae-259d-466e-83a9-4fc7f64ef2a4",
+      "id": "60c8b2ec-a8ec-496f-b721-79c343ad63f8",
       "name": "Delete Old Token"
     },
     {
@@ -1155,13 +1096,13 @@
         "claimsJson": "={\n  \"expiresIn\": 900,\n  \"email\": \"{{ $json.email }}\",\n  \"user_labels\": \"{{ $json.user_labels || [] }}\"\n}",
         "options": {}
       },
-      "id": "8de16d09-5632-464b-8af6-2f0f56f4bd9a",
+      "id": "a1457906-faf3-4719-8eee-b01966fe6331",
       "name": "Générer Access Token 1",
       "type": "n8n-nodes-base.jwt",
       "typeVersion": 1,
       "position": [
         -16,
-        1072
+        2384
       ],
       "notesInFlow": true,
       "credentials": {
@@ -1180,9 +1121,9 @@
       "typeVersion": 2,
       "position": [
         176,
-        1072
+        2384
       ],
-      "id": "83a7ffb4-63cd-449e-81b6-7ee719c08f71",
+      "id": "a7773c13-0082-43ae-b010-914d264d6ee4",
       "name": "Générer Refresh Token 1"
     },
     {
@@ -1254,9 +1195,9 @@
       "typeVersion": 1,
       "position": [
         384,
-        1072
+        2384
       ],
-      "id": "e0cea412-e9b4-4c7b-9c87-757ccb53dc4b",
+      "id": "462ded48-21db-4ecf-94cf-313e81389791",
       "name": "Sauvegarder Refresh Token 1"
     },
     {
@@ -1287,9 +1228,9 @@
       "typeVersion": 1,
       "position": [
         -784,
-        432
+        1744
       ],
-      "id": "7f9e3d6b-51e3-42f9-a83d-6cc7949f5e42",
+      "id": "a426e8f9-eab4-42b7-953d-10db767bf67b",
       "name": "Get Rate Limit Init",
       "alwaysOutputData": true
     },
@@ -1301,9 +1242,9 @@
       "typeVersion": 2,
       "position": [
         -608,
-        432
+        1744
       ],
-      "id": "9f7d6709-1842-4072-af90-169bce77d4d1",
+      "id": "f1e083c3-60f2-4242-b9e8-5f0fd887e0f0",
       "name": "Check Limit Init"
     },
     {
@@ -1400,9 +1341,9 @@
       "typeVersion": 1,
       "position": [
         -432,
-        432
+        1744
       ],
-      "id": "dd9135e4-319e-4cdf-a4bd-886a6bdf0800",
+      "id": "0a7445b2-f771-42c5-83e1-d42cf9529d74",
       "name": "Update Rate Limit Init"
     },
     {
@@ -1433,9 +1374,9 @@
       "typeVersion": 1,
       "position": [
         -784,
-        656
+        1968
       ],
-      "id": "e7ca282b-5380-4597-a9d9-d89583369dae",
+      "id": "9ff3211a-6c46-4cbe-a210-3edaaf84ac72",
       "name": "Get Rate Limit Verify",
       "alwaysOutputData": true
     },
@@ -1447,9 +1388,9 @@
       "typeVersion": 2,
       "position": [
         -608,
-        656
+        1968
       ],
-      "id": "7441455d-d889-43ee-b8c7-e33dac247923",
+      "id": "721fc756-a035-4ccf-ba76-c234678c23b5",
       "name": "Check Limit Verify"
     },
     {
@@ -1546,9 +1487,9 @@
       "typeVersion": 1,
       "position": [
         -432,
-        656
+        1968
       ],
-      "id": "c1249ffd-1796-4eeb-b14a-d1e820fec95f",
+      "id": "f5fd860d-89c1-4679-8b95-f20cce424608",
       "name": "Update Rate Limit Verify"
     },
     {
@@ -1579,9 +1520,9 @@
       "typeVersion": 2.3,
       "position": [
         -224,
-        432
+        1744
       ],
-      "id": "408bf7fc-31ad-4058-b448-6044d40f0526",
+      "id": "fca3f792-e1c1-49a9-b5d0-b27044ee8da5",
       "name": "Block or Pass"
     },
     {
@@ -1612,9 +1553,9 @@
       "typeVersion": 2.3,
       "position": [
         -224,
-        656
+        1968
       ],
-      "id": "4cf41634-7d1b-4fd5-ae67-05282080e471",
+      "id": "1bdfdd6d-ea0a-4cb5-b00a-b8b1ff86a4d5",
       "name": "Block or Pass Verify"
     },
     {
@@ -1626,10 +1567,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "position": [
         -1792,
-        1104
+        2416
       ],
       "typeVersion": 1,
-      "id": "ae2d7de0-4a4a-481f-bf2c-7547f42fb2fd",
+      "id": "513fe628-7f05-4b6e-b931-934c54278081",
       "name": "Sticky Note"
     },
     {
@@ -1640,9 +1581,9 @@
       "typeVersion": 2,
       "position": [
         0,
-        416
+        1728
       ],
-      "id": "06ada840-bff9-4d3c-af42-e7f0ceb030f8",
+      "id": "20d637c7-a1d7-486e-b560-efe789636d51",
       "name": "Throw Error",
       "onError": "continueErrorOutput"
     },
@@ -1654,9 +1595,9 @@
       "typeVersion": 2,
       "position": [
         -16,
-        640
+        1952
       ],
-      "id": "bf3a4126-7390-4f58-800f-b6c90dd3c221",
+      "id": "bffdc9ee-460a-41ed-b7ce-2a518fd41e3c",
       "name": "Throw Error Verify",
       "onError": "continueErrorOutput"
     },
@@ -1668,9 +1609,9 @@
       "typeVersion": 2,
       "position": [
         -1552,
-        848
+        2160
       ],
-      "id": "10b4106e-040c-48d0-acfc-9cbac783dc43",
+      "id": "10d319ee-5bc3-47fc-ae3f-a9b9264ee229",
       "name": "Input Validation",
       "onError": "continueErrorOutput"
     },
@@ -1678,13 +1619,13 @@
       "parameters": {
         "jsCode": "// Récupération du binaire depuis le Webhook initial\nconst webhookBinary = $('Webhook (Entrée Unique)').first().binary;\n\n// On vérifie s'il y a du binaire (peu importe la clé : file, data, attachment...)\nconst keys = Object.keys(webhookBinary || {});\nif (keys.length === 0) {\n  throw new Error(\"Erreur interne : Le fichier a été perdu en cours de route.\");\n}\n\n// On standardise la clé à 'data' pour le Subworkflow (Extract Text attend 'data' par défaut)\nconst binaryData = webhookBinary[keys[0]];\n\nreturn [{\n  json: items[0].json,\n  binary: {\n    data: binaryData\n  }\n}];"
       },
-      "id": "948a553f-f59d-488f-a73e-4270bd4f7f09",
+      "id": "02190c20-1948-4943-b04b-9c5d2c38f572",
       "name": "Restore Binary",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         -208,
-        1792
+        3104
       ]
     },
     {
@@ -1706,193 +1647,27 @@
         },
         "options": {}
       },
-      "id": "f82a24cc-e6d3-4189-809b-26ec66014cbe",
+      "id": "52a6c3d3-069f-48a1-ab60-7f25f59564d6",
       "name": "File Gatekeeper",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
         96,
-        1808
+        3120
       ]
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "http://ollama:11434/api/generate",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "model",
-              "value": "gemma2:2b"
-            },
-            {
-              "name": "prompt",
-              "value": "=Tu es un routeur intelligent spécialisé pour un assistant professionnel (Gehringer).\nAnalyse l'entrée utilisateur et décide si elle nécessite une recherche dans la base de connaissances (RAG) ou si c'est une simple discussion (CHAT).\n\nCRITÈRES DE DÉCISION :\n- INTENT \"rag\" : Uniquement si la question porte sur des aspects professionnels spécifiques comme :\n- L'analyse d'un profil par rapport à un poste (matching).\n- Des questions sur des missions, des offres d'emploi ou des opportunités.\n- Une demande de CV ou de parcours professionnel.\n- L'analyse du contenu d'un document joint.\n\n- INTENT \"chat\" : Pour tout le reste, y compris :\n- Salutations (\"Bonjour\", \"Ça va ?\").\n- Questions générales, culturelles ou météo (\"Quelle est la météo à Paris ?\").\n- Discussions sans lien direct avec le recrutement ou les documents joints.\n\nContexte : {{$json.file_metadata ? 'Fichier joint' : 'Aucun fichier'}}\nEntrée : {{ $json.text || $json.ocr_text || $('Webhook (Entrée Unique)').item.json.body.text || $('Webhook (Entrée Unique)').item.json.body.message }}\n\nRéponds UNIQUEMENT au format JSON strict :\n{ \"intent\": \"rag\" | \"chat\", \"reason\": \"...\" }"
-            },
-            {
-              "name": "format",
-              "value": "json"
-            },
-            {
-              "name": "stream",
-              "value": false
-            }
-          ]
-        },
-        "options": {}
+        "jsCode": "/**\n * CONTEXT MERGER - VERSION NETTOYÉE avec i18n\n * \n * CHANGEMENTS PAR RAPPORT À LA VERSION PRÉCÉDENTE :\n * 1. ✅ Ajout de la récupération du paramètre 'lang'\n * 2. ✅ Suppression de 'sessionId' (inutile, géré par Memory node)\n * 3. ✅ Code nettoyé et commenté\n * \n * USAGE : Remplacer le code du nœud \"Context Merger\" existant par ce code\n */\n\nconst data = $input.first().json;\nlet webhookBody = {};\ntry {\n    webhookBody = $('Webhook (Entrée Unique)').first().json.body || {};\n} catch (e) {\n    console.log('Warning: Could not access webhook body');\n}\n\n// ========================================\n// 1. EXTRACTION DE L'EMAIL ET DES LABELS (depuis le JWT)\n// ========================================\nlet email = \"no-email\";\nlet userLabels = [];\n\ntry {\n    const jwtPayload = $('Sécurité (Vérifier JWT)').first().json.payload;\n    email = jwtPayload.email || \"no-email\";\n\n    if (jwtPayload.user_labels) {\n        userLabels = Array.isArray(jwtPayload.user_labels)\n            ? jwtPayload.user_labels\n            : jwtPayload.user_labels.split(',');\n    }\n} catch (e) {\n    console.log('Warning: Could not extract JWT payload');\n}\n\n// ========================================\n// 2. RÉCUPÉRATION DE LA LANGUE (i18n)\n// ========================================\nconst lang = webhookBody.lang || 'fr'; // Défaut : français\n\n// ========================================\n// 3. DISTINCTION DES ENTRÉES\n// ========================================\n// Texte saisi par l'utilisateur (inline dans le chat)\nconst user_text = webhookBody.text || webhookBody.chatInput || webhookBody.message || \"\";\n\n// Contenu extrait des médias (Audio STT ou PDF OCR)\nconst file_text = data.transcription || data.text || \"\";\n\n// ========================================\n// 4. CONSTRUCTION DU CHAMP 'chatInput' FINAL\n// ========================================\n// On combine proprement si les deux existent\nlet combinedQuery = user_text;\n\nif (file_text && file_text !== user_text) {\n    combinedQuery = user_text\n        ? `${user_text}\\n\\n[Contenu du document/audio]:\\n${file_text}`\n        : file_text;\n}\n\n// ========================================\n// 5. OUTPUT FINAL\n// ========================================\nreturn [{\n    json: {\n        // Identité utilisateur\n        email: email,\n        user_labels: userLabels,\n\n        // Langue (i18n)\n        lang: lang,\n\n        // Contenus séparés (pour audit et logging)\n        text_input: user_text,           // Ce que l'user a tapé\n        media_transcription: file_text,  // Ce qui vient de l'audio/PDF\n\n        // Contenu combiné (pour compatibilité avec workflows existants)\n        chatInput: combinedQuery,\n\n        // Métadonnées\n        processedAt: new Date().toISOString(),\n\n        // ❌ sessionId SUPPRIMÉ car :\n        // - Le frontend ne l'envoie pas\n        // - Le Memory node du Super Agent utilise l'email comme session ID\n        // - Simplicité > Complexité inutile\n    }\n}];\n"
       },
-      "id": "0f1289dd-adb8-487d-9ec1-fd5836e70019",
-      "name": "Router Ollama",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        3664,
-        2240
-      ],
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "jsCode": "/* \n  CONTEXT MERGER (Audit-Fix)\n  Sépare le texte saisi de la retranscription binaire et ajoute l'email.\n*/\n\nconst data = $input.first().json;\nlet webhookBody = {}; \ntry { webhookBody = $('Webhook (Entrée Unique)').first().json.body || {}; } catch(e){}\n\n// 1. Extraction de l'Email et des Labels depuis le JWT\nlet email = \"no-email\";\nlet userLabels = [];\ntry {\n   const jwtPayload = $('Sécurité (Vérifier JWT)').first().json.payload;\n   email = jwtPayload.email || \"no-email\";\n   if(jwtPayload.user_labels) {\n       userLabels = Array.isArray(jwtPayload.user_labels) ? jwtPayload.user_labels : jwtPayload.user_labels.split(',');\n   }\n} catch(e) {}\n\n// 2. Distinction des entrées\n// Text saisi par l'utilisateur (Inline)\nconst user_text = webhookBody.text || webhookBody.chatInput || webhookBody.message || \"\";\n\n// Contenu extrait des médias (Audio ou PDF)\nconst file_text = data.transcription || data.text || \"\"; \n\n// 3. Construction du chatInput final (pour compatibilité descendante)\n// On combine proprement si les deux existent\nlet combinedQuery = user_text;\nif (file_text && file_text !== user_text) {\n    combinedQuery = user_text ? `${user_text}\\n\\n[Contenu du document/audio]:\\n${file_text}` : file_text;\n}\n\nreturn [{\n  json: {\n    email,\n    user_labels: userLabels,\n    text_input: user_text,\n    media_transcription: file_text,\n    chatInput: combinedQuery,\n    sessionId: webhookBody.sessionId || \"no-session\",\n    processedAt: new Date().toISOString()\n  }\n}];"
-      },
-      "id": "562a4dde-c2b0-4658-a191-f99de9e1116a",
+      "id": "e4c638f1-4f91-40fa-bace-62d97a7728d4",
       "name": "Context Merger",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         448,
-        1552
+        2864
       ]
-    },
-    {
-      "parameters": {
-        "dataType": "string",
-        "value1": "={{ $json.intent }}",
-        "rules": {
-          "rules": [
-            {
-              "value2": "chat"
-            },
-            {
-              "value2": "rag",
-              "output": 1
-            }
-          ]
-        }
-      },
-      "id": "a89d4fea-95ac-4f92-a506-5253780cb308",
-      "name": "Router (Switch Intent)",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 1,
-      "position": [
-        3088,
-        1680
-      ],
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "value": "Yw18E2lgZziMH8uX",
-          "mode": "list",
-          "cachedResultUrl": "/workflow/Yw18E2lgZziMH8uX",
-          "cachedResultName": "Unified RAG Chat & PDF Generator"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {},
-          "matchingColumns": [],
-          "schema": [],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": true
-        },
-        "options": {}
-      },
-      "id": "ece14a36-c629-45e5-9664-815ec4a39149",
-      "name": "Workflow RAG",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        3424,
-        2208
-      ],
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 3
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.pdf_generated }}",
-                    "rightValue": "=true",
-                    "operator": {
-                      "type": "boolean",
-                      "operation": "true",
-                      "singleValue": true
-                    },
-                    "id": "06a82771-4192-426f-85c9-bccc1481b395"
-                  }
-                ],
-                "combinator": "and"
-              }
-            }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "extra"
-        }
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.4,
-      "position": [
-        3600,
-        1952
-      ],
-      "id": "67614a42-da47-4cbd-9147-771c0b86c380",
-      "name": "Is PDF?",
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "fromEmail": "contact@gehringer.fr",
-        "toEmail": "={{ $('Router (Switch Intent)').item.json.email }}",
-        "subject": "Votre document Gehringer Conseil",
-        "html": "=Bonjour,\n\nBonjour, veuillez trouver ci-joint votre document...\nMerci !",
-        "options": {
-          "appendAttribution": false,
-          "attachments": "data",
-          "bccEmail": "philippe.lakas@gmail.com",
-          "replyTo": "web.contact@gehringer.fr"
-        }
-      },
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [
-        3856,
-        1872
-      ],
-      "id": "dc31ff01-53c0-42cf-ad68-ad42d3c9ded2",
-      "name": "Send email1",
-      "webhookId": "25e76513-a504-43d5-9a46-87dc60e1b24a",
-      "credentials": {
-        "smtp": {
-          "id": "IpKC6W2ftYil9cca",
-          "name": "SMTP account"
-        }
-      },
-      "disabled": true,
-      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -1903,205 +1678,11 @@
       "type": "n8n-nodes-base.stickyNote",
       "position": [
         -976,
-        1520
+        2832
       ],
       "typeVersion": 1,
-      "id": "0bd8dc5c-d7f0-4482-b49b-d428c3669ae7",
+      "id": "0f27c255-ba46-49bf-b080-c15c65cc553c",
       "name": "Sticky Note1"
-    },
-    {
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "value": "sk0XdwzdY0Zk_ZM-Pso2Z",
-          "mode": "list",
-          "cachedResultUrl": "/workflow/sk0XdwzdY0Zk_ZM-Pso2Z",
-          "cachedResultName": "Philippe AI Brain (Central - Final Fix)"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {},
-          "matchingColumns": [],
-          "schema": [],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": true
-        },
-        "options": {
-          "waitForSubWorkflow": true
-        }
-      },
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        1600,
-        1504
-      ],
-      "id": "05e52a67-fa99-4056-bfa6-1fbbbbb26887",
-      "name": "Call 'Philippe AI Brain (Central - Final Fix)'"
-    },
-    {
-      "parameters": {
-        "text": "={{ $json.chatInput }}",
-        "guardrails": {
-          "topicalAlignment": {
-            "value": {
-              "threshold": 0.6,
-              "prompt": "Vous êtes un système d'analyse de contenu qui détermine si un texte reste dans le périmètre autorisé.\n\nPÉRIMÈTRE AUTORISÉ :\n1. Questions professionnelles concernant :\n   - L'entreprise Gehringer\n   - Philippe Gehringer (compétences, services, expérience)\n   - Les services proposés par l'entreprise\n   \n2. Messages de politesse :\n   - Salutations (bonjour, bonsoir, hello)\n   - Remerciements (merci, thanks)\n   - Formules de politesse (au revoir, à bientôt)\n\nHORS PÉRIMÈTRE (à bloquer) :\n- Actualités générales\n- Cuisine, recettes\n- Sport, divertissement\n- Politique\n- Santé personnelle\n- Tout sujet non lié à Gehringer/Philippe ou aux services\n\nDéterminez si le texte respecte le périmètre autorisé."
-            }
-          }
-        }
-      },
-      "id": "guardrail-topic-filter",
-      "name": "Guardrail - Topic Filter",
-      "type": "@n8n/n8n-nodes-langchain.guardrails",
-      "typeVersion": 2,
-      "position": [
-        2928,
-        1952
-      ],
-      "disabled": true,
-      "notes": "🛡️ Niveau 1 : Filtrage des sujets hors périmètre professionnel"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
-        },
-        "builtInTools": {},
-        "options": {
-          "maxTokens": 500,
-          "temperature": 0.3
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        2928,
-        2192
-      ],
-      "id": "1417ae0b-4243-4afb-b315-71672f3029b1",
-      "name": "OpenAI Chat Model1",
-      "credentials": {
-        "openAiApi": {
-          "id": "pe1RxUmCYaJzcwAP",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "/* \n  CONTEXT MERGER (Corrigé)\n  Récupère le message peu importe son nom.\n*/\n\n// Références aux nœuds\nconst data = $input.first().json;\nlet webhookBody = {};\ntry { webhookBody = $('Webhook (Entrée Unique)').first().json.body || {}; } catch(e){}\nlet inputValidation = {};\ntry { inputValidation = $('Input Validation').first().json || {}; } catch(e){}\n\n// LISTE DES CANDIDATS (Ordre de priorité)\n// On a ajouté 'text' venant du body du webhook, c'est celui qu'on a vu sur la capture.\nconst candidates = [\n  // 1. Inputs directs (votre Routeur ou Whisper)\n  data.text, data.transcription, data.chatInput, \n  \n  // 2. Input Validation (s'il normalise)\n  inputValidation.chatInput, inputValidation.text,\n  \n  // 3. Webhook Source (La vérité nue)\n  webhookBody.text,        // <--- C'EST CELUI-LA QU'ON VEUT !\n  webhookBody.chatInput, \n  webhookBody.message\n];\n\n// Trouver le premier non-vide\nlet finalQuery = candidates.find(c => c && typeof c === 'string' && c.trim() !== \"\") || \"\";\n\n// Récupération Session\nconst sessionId = data.sessionId || inputValidation.sessionId || webhookBody.sessionId || \"no-session\";\n\nreturn [\n  {\n    json: {\n      chatInput: finalQuery, // Sera \"Bonjour, qui es-tu ?\"\n      sessionId: sessionId,\n      processedAt: new Date().toISOString()\n    }\n  }\n];"
-      },
-      "id": "3c587d56-750c-4f5c-955c-dc007911f9ac",
-      "name": "Context Merger old",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3136,
-        2192
-      ],
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.openai.com/v1/chat/completions",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [ { role: 'system', content: \"Tu es un contrôleur d'accès. Analyse l'entrée utilisateur.\\n\\nGUIDE DE CLASSIFICATION :\\n1. 'pro': Sujets Gehringer, Recrutement, Management de transition, Compétences de Philippe, ou Politesse basique (Bonjour, Merci).\\n2. 'shadow': Sujets Appartement, Wifi, Clés, Code d'entrée, Infos privées.\\n   -> CONDITION: L'utilisateur DOIT avoir le tag 'Airbnb', 'Ami', ou 'Famille'.\\n   -> Si les droits sont absents, classer en 'blocked'.\\n3. 'blocked': Météo, Politique, Sport, Recettes, blagues génériques, ou Shadow sans droits.\\n\\nRéponds UNIQUEMENT le JSON : { \\\"category\\\": \\\"pro\\\" | \\\"shadow\\\" | \\\"blocked\\\" }\" }, { role: 'user', content: 'Message: ' + $json.chatInput + '\\nTags: ' + $json.user_labels } ], temperature: 0 }) }}",
-        "options": {}
-      },
-      "id": "9b49dc3d-ccb3-4267-a573-a82ac9495360",
-      "name": "Rights Analyzer",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        736,
-        1552
-      ],
-      "credentials": {
-        "openAiApi": {
-          "id": "pe1RxUmCYaJzcwAP",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "let analysis = { category: 'blocked' };\ntry {\n  const content = $json.choices[0].message.content;\n  // Nettoyage markdown json si présent\n  const cleanJson = content.replace(/```json/g, '').replace(/```/g, '').trim();\n  analysis = JSON.parse(cleanJson);\n} catch(e) {}\n\n// RECUPERATION DU CONTEXTE ORIGINAL\n// On reprend tout ce qui sortait du Context Merger (chatInput, user_labels, sessionId...)\nconst originalContext = $('Context Merger').first().json;\n\nreturn [{\n  json: {\n    ...originalContext,\n    rights_category: analysis.category\n  }\n}];"
-      },
-      "id": "09e6d275-076d-462d-9e36-aef7465591a6",
-      "name": "Parse Rights",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        928,
-        1552
-      ]
-    },
-    {
-      "parameters": {
-        "dataType": "string",
-        "value1": "={{ $json.rights_category }}",
-        "rules": {
-          "rules": [
-            {
-              "value2": "pro"
-            },
-            {
-              "value2": "shadow",
-              "output": 1
-            },
-            {
-              "value2": "blocked",
-              "output": 2
-            }
-          ]
-        }
-      },
-      "id": "9c454b2e-97f9-44e7-8d7c-da74acd34dd7",
-      "name": "Router (User Rights)",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 1,
-      "position": [
-        1168,
-        1520
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={\n  \"output\": \"Désolé, je ne peux pas traiter votre demande. Je suis exclusivement dédié aux échanges professionnels concernant les activités de Philippe Gehringer.\"\n}",
-        "options": {}
-      },
-      "id": "ed95923f-eafc-41fb-abab-b57039f5123c",
-      "name": "Rejection Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        1840,
-        1888
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "{\n \"text\": \"[🗝️ MODE PRIVÉ ACTIVÉ]\\n\\nBonjour ! Je vois que vous faites partie des invités privilégiés (Airbnb/Ami).\\n\\nVoici ce que je peux faire pour vous :\\n- Vous donner le code Wifi\\n- Vous expliquer comment récupérer les clés\\n- Vous indiquer où se trouvent les poubelles...\\n\\nQue souhaitez-vous savoir ?\"\n}",
-        "options": {}
-      },
-      "id": "c0c0a082-b3f5-47f9-b3c0-52b26f1020a7",
-      "name": "Shadow Brain Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        1840,
-        1712
-      ]
     },
     {
       "parameters": {
@@ -2113,27 +1694,327 @@
       "type": "n8n-nodes-base.stickyNote",
       "position": [
         -496,
-        1280
+        2592
       ],
       "typeVersion": 1,
-      "id": "b217401d-6145-46f3-bde5-8d9d89c4d2aa",
+      "id": "e4d1f6e0-057e-457f-bcf7-32d3ef3443dc",
       "name": "Sticky Note2"
     },
     {
       "parameters": {
-        "content": "# Triage selon contenu\n## Différents brains\n",
-        "height": 368,
-        "width": 704,
-        "color": 4
+        "jsCode": "/**\n * PROMPT FACTORY - Nœud n8n (VERSION COMPLÈTE MULTILINGUE)\n * Centralise tous les prompts et messages bilingues (FR/EN)\n * \n * USAGE : Copiez ce code dans le nœud \"Prompt Factory\" de Backend Chat API\n * INPUT : Attend $json.lang ('fr' ou 'en') ou détecte depuis le texte\n * OUTPUT : Ajoute $json.prompts avec tous les textes traduits\n */\n\n// 1. Détection automatique de la langue\nconst inputJson = $json;\nlet detectedLang = inputJson.lang || 'fr'; // Défaut\n\n// Si aucune langue explicite, essayer de détecter depuis le texte utilisateur\nif (!inputJson.lang && inputJson.chatInput) {\n    const text = inputJson.chatInput.toLowerCase();\n    // Patterns simples pour détection rapide\n    if (/\\b(hello|hi|please|thank|there|what|how|why|when)\\b/.test(text)) {\n        detectedLang = 'en';\n    } else if (/\\b(bonjour|salut|svp|merci|comment|pourquoi|quand)\\b/.test(text)) {\n        detectedLang = 'fr';\n    } else if (/\\b(hola|gracias|que|como)\\b/.test(text)) {\n        detectedLang = 'es'; // espagnol -> sera traité en EN\n    } else if (/\\b(ciao|grazie|che|come)\\b/.test(text)) {\n        detectedLang = 'it'; // italien -> sera traité en EN\n    }\n}\n\n// Normalisation : Seuls 'fr' et 'en' sont officiellement supportés pour les prompts\n// Toutes les autres langues (es, it, de...) basculent sur 'en' (anglais international)\nconst supportedLangs = ['fr', 'en'];\nconst promptLang = supportedLangs.includes(detectedLang) ? detectedLang : 'en';\n\n// Langue pour les documents (CV/Lettre) : FR ou EN uniquement\nconst docLang = promptLang;\n\n// 2. Définition de TOUS les textes bilingues\nconst TRANSLATIONS = {\n    fr: {\n        errors: {\n            jwt_expired: \"🔒 Votre session a expiré. Veuillez vous reconnecter.\",\n            jwt_invalid: \"🔒 Token invalide. Veuillez vous authentifier à nouveau.\",\n            rate_limit: \"⏱️ Trop de tentatives. Réessayez dans quelques minutes.\",\n            invalid_file: \"❌ Type de fichier non supporté. Formats acceptés : PDF, TXT.\",\n            server_error: \"⚠️ Erreur serveur. Veuillez réessayer dans quelques instants.\",\n            auth_failed: \"❌ Code incorrect. Vérifiez votre saisie.\",\n            otp_expired: \"⏱️ Code expiré. Demandez-en un nouveau.\",\n            file_too_large: \"📦 Fichier trop volumineux. Maximum : 10 MB.\",\n            no_audio: \"🎤 Aucun audio détecté. Réessayez votre enregistrement.\",\n            access_denied: \"🚫 Accès refusé. Cette ressource nécessite des permissions spécifiques.\",\n        },\n        success: {\n            otp_sent: \"✅ Code envoyé par email. Vérifiez votre boîte de réception.\",\n            auth_success: \"🎉 Authentification réussie ! Bienvenue.\",\n            file_processed: \"✅ Fichier traité avec succès.\",\n        },\n        system_prompts: {\n            super_agent: `Tu es l'assistant IA de Philippe Gehringer, expert en management de transition et coaching professionnel.\n\nCONTEXTE UTILISATEUR :\n- Email authentifié : {{ $json.email }}\n- Permissions : {{ $json.user_labels }}\n- Langue détectée : ${detectedLang} (Mode réponse : ${promptLang.toUpperCase()})\n\nOUTILS DISPONIBLES :\n1. **load_profile_data** : Charge les données complètes de Philippe (persona + CV structuré)\n2. **check_user_rights** : Vérifie les droits d'accès\n3. **analyze_job_match** : Analyse une offre et calcule l'adéquation (0-100)\n4. **generate_cv_pdf** : Génère un CV PDF personnalisé\n5. **generate_cover_letter_pdf** : Génère une lettre de motivation PDF\n6. **send_email_with_attachments** : Envoie un email avec pièces jointes\n\nSTRATÉGIE D'UTILISATION :\n\n🔍 **Scénario 1 : Question sur le parcours de Philippe**\n→ Utilise 'load_profile_data' pour accéder aux informations\n→ Réponds directement en exploitant les données structurées\n\n🎯 **Scénario 2 : Analyse d'une offre d'emploi**\n→ 1) Utilise 'analyze_job_match' avec l'offre\n→ 2) Si score > 70% : Propose de générer CV + Cover Letter\n→ 3) Demande confirmation avant génération PDF\n\n📄 **Scénario 3 : Demande explicite de CV**\n→ Demande si c'est pour une offre spécifique (personnalisation)\n→ Utilise 'generate_cv_pdf'\n→ Propose l'envoi par email à {{ $json.email }}\n\n✉️ **Scénario 4 : Candidature complète**\n→ 1) 'analyze_job_match'\n→ 2) 'generate_cv_pdf' (personnalisé)\n→ 3) 'generate_cover_letter_pdf'\n→ 4) Demande confirmation pour 'send_email_with_attachments'\n\n📧 **Scénario 5 : Envoi par email**\n→ NE PAS envoyer automatiquement !\n→ NE JAMAIS demander l'adresse email (elle est déjà connue : {{ $json.email }})\n→ TOUJOURS demander confirmation d'abord :\n   \"Je vais t'envoyer ce document à {{ $json.email }}. Confirmes-tu ?\"\n→ Si OUI : utilise 'send_email_with_attachments' avec to_email = \"{{ $json.email }}\"\n→ Si NON : \"Pas de problème, je garde les documents disponibles.\"\n→ Après envoi : \"✅ Email envoyé avec succès à {{ $json.email }} !\"\n\n🔒 **RÈGLES DE SÉCURITÉ EMAIL (IMPÉRATIF) :**\n- L'email destinataire est TOUJOURS {{ $json.email }} (l'email authentifié du visiteur)\n- JAMAIS permettre à l'utilisateur de spécifier une autre adresse\n- Si l'utilisateur demande d'envoyer à une autre adresse, réponds :\n  \"Par mesure de sécurité, je peux uniquement envoyer à ton adresse enregistrée ({{ $json.email }}). C'est pour éviter tout usage abusif du système.\"\n\nRÈGLES IMPORTANTES :\n- TOUJOURS utiliser 'load_profile_data' avant de parler du parcours de Philippe\n- NE JAMAIS inventer des informations non présentes dans les données\n- Si génération PDF : Toujours proposer l'envoi par email à {{ $json.email }}\n- Être direct et professionnel (style Manager de Transition)\n- Utiliser du Markdown pour la mise en forme\n\nLANGUE DE RÉPONSE :\n→ L'utilisateur semble parler : ${detectedLang}\n→ TU DOIS RÉPONDRE EN : ${promptLang === 'fr' ? 'FRANÇAIS' : 'ANGLAIS'}\n→ Si la langue détectée n'est pas le français, utilise l'anglais par défaut.\n→ Documents générés : TOUJOURS en ${docLang.toUpperCase()}\n\nFORMAT DES RÉPONSES :\n- Utilise des **titres en gras**\n- Listes à puces pour clarté\n- Citations pour mettre en avant les points clés`,\n\n            tool_load_profile: \"Charge les données complètes du profil de Philippe (persona.yml + CV structuré). Utilise cet outil pour accéder aux informations sur le parcours, compétences, expertises, style de travail, etc.\",\n            \n            tool_check_rights: \"Vérifie si l'utilisateur a accès à une ressource selon ses labels. Paramètre : required_access ('brain_pro' | 'brain_shadow')\",\n            \n            tool_send_email: \"Envoie un email avec pièces jointes. IMPORTANT : 1) Toujours demander confirmation à l'utilisateur AVANT d'envoyer. 2) Le paramètre to_email doit TOUJOURS être l'email du contexte utilisateur ({{ $json.email }}), JAMAIS une adresse fournie par l'utilisateur. Paramètres : to_email (automatique depuis contexte), subject, body, attachments[]\",\n\n            job_analyzer: `Tu es un expert en analyse de recrutement.\n\nTA MISSION :\nAnalyse l'offre d'emploi fournie et extrait les informations clés.\n\nOFFRE D'EMPLOI :\n{{ job_description }}\n\nFORMAT DE SORTIE (JSON uniquement) :\n{\n  \"type\": \"offer\",\n  \"job_title\": \"Intitulé exact du poste\",\n  \"company_name\": \"Nom de l'entreprise (ou 'Non spécifié')\",\n  \"location\": \"Lieu (ou 'Non spécifié')\",\n  \"key_requirements\": [\n    \"Compétence technique 1\",\n    \"Compétence technique 2\",\n    \"Expérience requise\"\n  ],\n  \"mission_summary\": \"Résumé concis de la mission en 2-3 phrases\",\n  \"contract_type\": \"CDI/CDD/Mission/Freelance (ou 'Non spécifié')\",\n  \"context\": \"Secteur d'activité et contexte de l'entreprise\"\n}\n\nRÈGLES :\n- Extrait UNIQUEMENT les informations présentes dans l'offre\n- Si une info est absente, mets \"Non spécifié\"\n- Sois factuel, pas d'interprétation\n- Retourne du JSON valide uniquement`,\n\n            job_matcher: `Tu es Philippe Gehringer, manager de transition.\n\nCONTEXTE :\nVoici mes données professionnelles complètes :\n{{ profile_data }}\n\nOFFRE ANALYSÉE :\n{{ job_analysis }}\n\nTA MISSION :\nCalcule un score d'adéquation (0-100) entre mon profil et cette offre.\nAnalyse CHAQUE expérience de mon CV par rapport aux exigences du poste.\n\nFORMAT DE SORTIE (JSON uniquement) :\n{\n  \"global_fit_score\": 85,\n  \"global_analysis\": \"Analyse globale de l'adéquation en 3-4 phrases. Mets en avant les atouts principaux et points de vigilance éventuels.\",\n  \"experiences_match\": [\n    {\n      \"experience_id\": \"Description ou ID de l'expérience\",\n      \"score\": 95,\n      \"relevance\": \"Très pertinent car mobilise les compétences X, Y, Z requises par le poste\",\n      \"strategy\": \"À mettre en avant\"\n    }\n  ],\n  \"key_strengths\": [\"Point fort 1\", \"Point fort 2\"],\n  \"potential_gaps\": [\"Point de vigilance 1 (si applicable)\"],\n  \"recommended_angle\": \"Angle stratégique pour la candidature\"\n}\n\nRÈGLES :\n- Sois honnête sur le scoring (ni pessimiste ni optimiste)\n- Score global = moyenne pondérée des expériences pertinentes\n- Identifie 2-3 expériences clés à mettre en avant\n- Retourne du JSON valide uniquement`,\n\n            job_formatter: `Tu es Philippe Gehringer.\n\nCONTEXTE :\nVoici le résultat de mon analyse de matching :\n{{ matching_result }}\n\nTA MISSION :\nRédige une réponse professionnelle et engageante pour présenter cette analyse.\n\nSTRUCTURE DE LA RÉPONSE (Markdown) :\n## 🎯 Synthèse\n- Score d'adéquation : **XX%**\n- Avis global en 2-3 phrases (direct, pragmatique)\n\n## ✅ Expériences Clés\n- Cite les 2-3 expériences les plus pertinentes\n- Pour chaque : titre + 1 phrase sur la pertinence\n\n## 💡 Angle Stratégique\n- Propose l'angle de candidature recommandé\n- 1-2 phrases maximum\n\nTON :\n- Professionnel, direct, pragmatique\n- Style Manager de Transition\n- Pas de langue de bois\n\nLANGUE :\n→ TOUJOURS en FRANÇAIS (sauf si {{ lang }} = 'en')`,\n\n            cv_generator: `Tu es un expert en rédaction de CV pour managers de transition.\n\nDONNÉES DISPONIBLES :\n{{ profile_data }}\n\nLANGUE DU CV : {{ lang === 'en' ? 'ANGLAIS' : 'FRANÇAIS' }}\n\n{{ job_description ? 'OFFRE CIBLÉE (adapte le CV à cette offre) :\\n' + job_description : 'CV GÉNÉRIQUE (toutes expériences)' }}\n\nTA MISSION :\nRédige un CV professionnel au format HTML avec TailwindCSS.\n\nCONSIGNES OBLIGATOIRES :\n- Format A4 (210mm x 297mm)\n- Typographie moderne (Inter ou Roboto via Google Fonts)\n- Sections : En-tête, Résumé, Expériences, Formation, Compétences, Langues\n- Si offre fournie : ADAPTER le CV en mettant en avant les expériences pertinentes\n- Style : Clean, professionnel, lisible\n- Couleurs : Palette sobre (bleu marine #1e3a8a, gris #374151)\n- Marges : 20mm de chaque côté\n\nSTRUCTURE HTML OBLIGATOIRE :\n1. Inclure TailwindCSS via CDN\n2. Style pour impression A4\n3. En-tête avec nom, titre, contact\n4. Résumé professionnel (4-5 lignes)\n5. Expériences en reverse chronologique\n6. Formation\n7. Compétences (colonnes)\n8. Langues\n\nIMPORTANT : Encadre ton HTML complet avec les balises <GENERATE_PDF> et </GENERATE_PDF>\n\nExemple de structure :\n<GENERATE_PDF>\n<!DOCTYPE html>\n<html lang=\"{{ lang }}\">\n<head>\n  <meta charset=\"UTF-8\">\n  <script src=\"https://cdn.tailwindcss.com\"></script>\n  <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap\" rel=\"stylesheet\">\n  <style>\n    @page { size: A4; margin: 0; }\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body class=\"bg-white\">\n  <!-- Ton contenu CV ici -->\n</body>\n</html>\n</GENERATE_PDF>`,\n\n            cover_letter_generator: `Tu es un expert en rédaction de lettres de motivation pour managers de transition.\n\nDONNÉES DISPONIBLES :\n{{ profile_data }}\n\nOFFRE D'EMPLOI :\n{{ job_description }}\n\nENTREPRISE : {{ company_name }}\n\nLANGUE DE LA LETTRE : {{ lang === 'en' ? 'ANGLAIS (Cover Letter)' : 'FRANÇAIS (Lettre de Motivation)' }}\n\nTA MISSION :\nRédige une lettre de motivation professionnelle au format HTML avec TailwindCSS.\n\nSTRUCTURE OBLIGATOIRE :\n1. **En-tête** (Nom, Contact, Date, Destinataire)\n2. **Objet** : Candidature au poste de [titre]\n3. **Corps (3 paragraphes)** :\n   - §1 : Motivation et contexte (pourquoi ce poste m'intéresse)\n   - §2 : Adéquation profil/poste (2-3 expériences clés avec résultats concrets)\n   - §3 : Valeur ajoutée et disponibilité\n4. **Formule de politesse**\n5. **Signature**\n\nSTYLE :\n- Format A4 (1 page maximum)\n- Typographie élégante (Crimson Text ou Georgia via Google Fonts)\n- Ton : Direct, professionnel, confiant (style Manager de Transition)\n- Mise en lumière des expériences à haut score de matching\n- Pas de langue de bois, concret et factuel\n\nIMPORTANT : Encadre ton HTML complet avec les balises <GENERATE_PDF> et </GENERATE_PDF>\n\nExemple de structure :\n<GENERATE_PDF>\n<!DOCTYPE html>\n<html lang=\"{{ lang }}\">\n<head>\n  <meta charset=\"UTF-8\">\n  <script src=\"https://cdn.tailwindcss.com\"></script>\n  <link href=\"https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600&display=swap\" rel=\"stylesheet\">\n  <style>\n    @page { size: A4; margin: 0; }\n    body { font-family: 'Crimson Text', serif; }\n  </style>\n</head>\n<body class=\"bg-white p-12\">\n  <!-- Ton contenu lettre ici -->\n</body>\n</html>\n</GENERATE_PDF>`\n        }\n    },\n\n    en: {\n        errors: {\n            jwt_expired: \"🔒 Your session has expired. Please log in again.\",\n            jwt_invalid: \"🔒 Invalid token. Please authenticate again.\",\n            rate_limit: \"⏱️ Too many attempts. Try again in a few minutes.\",\n            invalid_file: \"❌ Unsupported file type. Accepted formats: PDF, TXT.\",\n            server_error: \"⚠️ Server error. Please try again shortly.\",\n            auth_failed: \"❌ Incorrect code. Please check your input.\",\n            otp_expired: \"⏱️ Code expired. Request a new one.\",\n            file_too_large: \"📦 File too large. Maximum: 10 MB.\",\n            no_audio: \"🎤 No audio detected. Try recording again.\",\n            access_denied: \"🚫 Access denied. This resource requires specific permissions.\",\n        },\n        success: {\n            otp_sent: \"✅ Code sent by email. Check your inbox.\",\n            auth_success: \"🎉 Authentication successful! Welcome.\",\n            file_processed: \"✅ File processed successfully.\",\n        },\n        system_prompts: {\n            super_agent: `You are Philippe Gehringer's AI assistant, expert in transition management and professional coaching.\n\nUSER CONTEXT:\n- Authenticated email: {{ $json.email }}\n- Permissions: {{ $json.user_labels }}\n- Detected Language: ${detectedLang} (Bot Mode: ${promptLang.toUpperCase()})\n\nAVAILABLE TOOLS:\n1. **load_profile_data**: Load Philippe's complete profile data (persona + structured CV)\n2. **check_user_rights**: Check access rights\n3. **analyze_job_match**: Analyze an offer and calculate fit (0-100)\n4. **generate_cv_pdf**: Generate a personalized PDF resume\n5. **generate_cover_letter_pdf**: Generate a PDF cover letter\n6. **send_email_with_attachments**: Send an email with attachments\n\nUSAGE STRATEGY:\n\n🔍 **Scenario 1: Question about Philippe's background**\n→ Use 'load_profile_data' to access information\n→ Answer directly using structured data\n\n🎯 **Scenario 2: Job offer analysis**\n→ 1) Use 'analyze_job_match' with the offer\n→ 2) If score > 70%: Propose generating CV + Cover Letter\n→ 3) Ask for confirmation before PDF generation\n\n📄 **Scenario 3: Explicit CV request**\n→ Ask if it's for a specific offer (customization)\n→ Use 'generate_cv_pdf'\n→ Propose sending by email to {{ $json.email }}\n\n✉️ **Scenario 4: Complete application**\n→ 1) 'analyze_job_match'\n→ 2) 'generate_cv_pdf' (personalized)\n→ 3) 'generate_cover_letter_pdf'\n→ 4) Ask for confirmation for 'send_email_with_attachments'\n\n📧 **Scenario 5: Email sending**\n→ DO NOT send automatically!\n→ NEVER ask for the email address (it's already known: {{ $json.email }})\n→ ALWAYS ask for confirmation first:\n   \"I'll send this document to {{ $json.email }}. Do you confirm?\"\n→ If YES: use 'send_email_with_attachments' with to_email = \"{{ $json.email }}\"\n→ If NO: \"No problem, I'll keep the documents available.\"\n→ After sending: \"✅ Email sent successfully to {{ $json.email }}!\"\n\n🔒 **EMAIL SECURITY RULES (MANDATORY):**\n- The recipient email is ALWAYS {{ $json.email }} (the user's authenticated email)\n- NEVER allow the user to specify another address\n- If the user asks to send to another address, respond:\n  \"For security reasons, I can only send to your registered address ({{ $json.email }}). This prevents any misuse of the system.\"\n\nIMPORTANT RULES:\n- ALWAYS use 'load_profile_data' before talking about Philippe's background\n- NEVER invent information not present in the data\n- If PDF generation: Always propose email sending to {{ $json.email }}\n- Be direct and professional (Transition Manager style)\n- Use Markdown for formatting\n\nRESPONSE LANGUAGE:\n→ User appears to speak: ${detectedLang}\n→ YOU MUST RESPOND IN: ${promptLang === 'fr' ? 'FRENCH' : 'ENGLISH'}\n→ Documents language: ALWAYS ${docLang.toUpperCase()}\n\nRESPONSE FORMAT:\n- Use **bold titles**\n- Bullet lists for clarity\n- Quotes to highlight key points`,\n\n            tool_load_profile: \"Load Philippe Gehringer's complete profile data (persona.yml + structured CV). Use this tool to access information about professional background, skills, expertise, work style, etc.\",\n            \n            tool_check_rights: \"Check if user has access to a resource based on labels. Parameter: required_access ('brain_pro' | 'brain_shadow')\",\n            \n            tool_send_email: \"Send an email with attachments. IMPORTANT: 1) Always ask user for confirmation BEFORE sending. 2) The to_email parameter must ALWAYS be the user's context email ({{ $json.email }}), NEVER an address provided by the user. Parameters: to_email (automatic from context), subject, body, attachments[]\",\n\n            job_analyzer: `You are a recruitment analysis expert.\n\nYOUR MISSION:\nAnalyze the provided job offer and extract key information.\n\nJOB OFFER:\n{{ job_description }}\n\nOUTPUT FORMAT (JSON only):\n{\n  \"type\": \"offer\",\n  \"job_title\": \"Exact job title\",\n  \"company_name\": \"Company name (or 'Not specified')\",\n  \"location\": \"Location (or 'Not specified')\",\n  \"key_requirements\": [\"Technical skill 1\", \"Technical skill 2\", \"Required experience\"],\n  \"mission_summary\": \"Concise mission summary in 2-3 sentences\",\n  \"contract_type\": \"Permanent/Fixed-term/Mission/Freelance (or 'Not specified')\",\n  \"context\": \"Industry sector and company context\"\n}\n\nRULES:\n- Extract ONLY information present in the offer\n- If info is missing, put \"Not specified\"\n- Be factual, no interpretation\n- Return valid JSON only`,\n\n            job_matcher: `You are Philippe Gehringer, transition manager.\n\nCONTEXT:\nHere is my complete professional data:\n{{ profile_data }}\n\nANALYZED OFFER:\n{{ job_analysis }}\n\nYOUR MISSION:\nCalculate a fit score (0-100) between my profile and this offer.\nAnalyze EACH experience from my CV against the job requirements.\n\nOUTPUT FORMAT (JSON only):\n{\n  \"global_fit_score\": 85,\n  \"global_analysis\": \"Overall fit analysis in 3-4 sentences. Highlight main strengths and potential concerns.\",\n  \"experiences_match\": [\n    {\n      \"experience_id\": \"Experience description or ID\",\n      \"score\": 95,\n      \"relevance\": \"Highly relevant as it mobilizes X, Y, Z skills required\",\n      \"strategy\": \"Highlight this\"\n    }\n  ],\n  \"key_strengths\": [\"Strength 1\", \"Strength 2\"],\n  \"potential_gaps\": [\"Concern 1 (if applicable)\"],\n  \"recommended_angle\": \"Strategic angle for application\"\n}\n\nRULES:\n- Be honest with scoring (neither pessimistic nor optimistic)\n- Global score = weighted average of relevant experiences\n- Identify 2-3 key experiences to highlight\n- Return valid JSON only`,\n\n            job_formatter: `You are Philippe Gehringer.\n\nCONTEXT:\nHere is my matching analysis result:\n{{ matching_result }}\n\nYOUR MISSION:\nWrite a professional and engaging response to present this analysis.\n\nRESPONSE STRUCTURE (Markdown):\n## 🎯 Summary\n- Fit score: **XX%**\n- Overall opinion in 2-3 sentences (direct, pragmatic)\n\n## ✅ Key Experiences\n- List the 2-3 most relevant experiences\n- For each: title + 1 sentence on relevance\n\n## 💡 Strategic Angle\n- Propose the recommended application angle\n- 1-2 sentences maximum\n\nTONE:\n- Professional, direct, pragmatic\n- Transition Manager style\n- No corporate jargon\n\nLANGUAGE:\n→ ALWAYS in ENGLISH (unless {{ lang }} = 'fr')`,\n\n            cv_generator: `You are an expert in resume writing for transition managers.\n\nAVAILABLE DATA:\n{{ profile_data }}\n\nRESUME LANGUAGE: {{ lang === 'en' ? 'ENGLISH' : 'FRENCH' }}\n\n{{ job_description ? 'TARGETED OFFER (adapt resume to this offer):\\n' + job_description : 'GENERIC RESUME (all experiences)' }}\n\nYOUR MISSION:\nWrite a professional resume in HTML format with TailwindCSS.\n\nMANDATORY REQUIREMENTS:\n- A4 format (210mm x 297mm)\n- Modern typography (Inter or Roboto via Google Fonts)\n- Sections: Header, Summary, Experience, Education, Skills, Languages\n- If offer provided: ADAPT the resume by highlighting relevant experiences\n- Style: Clean, professional, readable\n- Colors: Sober palette (navy blue #1e3a8a, gray #374151)\n- Margins: 20mm on each side\n\nMANDATORY HTML STRUCTURE:\n1. Include TailwindCSS via CDN\n2. Style for A4 printing\n3. Header with name, title, contact\n4. Professional summary (4-5 lines)\n5. Experiences in reverse chronological order\n6. Education\n7. Skills (columns)\n8. Languages\n\nIMPORTANT: Wrap your complete HTML with <GENERATE_PDF> and </GENERATE_PDF> tags\n\nExample structure:\n<GENERATE_PDF>\n<!DOCTYPE html>\n<html lang=\"{{ lang }}\">\n<head>\n  <meta charset=\"UTF-8\">\n  <script src=\"https://cdn.tailwindcss.com\"></script>\n  <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap\" rel=\"stylesheet\">\n  <style>\n    @page { size: A4; margin: 0; }\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body class=\"bg-white\">\n  <!-- Your CV content here -->\n</body>\n</html>\n</GENERATE_PDF>`,\n\n            cover_letter_generator: `You are an expert in cover letter writing for transition managers.\n\nAVAILABLE DATA:\n{{ profile_data }}\n\nJOB OFFER:\n{{ job_description }}\n\nCOMPANY: {{ company_name }}\n\nLETTER LANGUAGE: {{ lang === 'en' ? 'ENGLISH (Cover Letter)' : 'FRENCH (Lettre de Motivation)' }}\n\nYOUR MISSION:\nWrite a professional cover letter in HTML format with TailwindCSS.\n\nMANDATORY STRUCTURE:\n1. **Header** (Name, Contact, Date, Recipient)\n2. **Subject**: Application for [job title]\n3. **Body (3 paragraphs)**:\n   - §1: Motivation and context (why this position interests me)\n   - §2: Profile/position fit (2-3 key experiences with concrete results)\n   - §3: Added value and availability\n4. **Closing formula**\n5. **Signature**\n\nSTYLE:\n- A4 format (1 page maximum)\n- Elegant typography (Crimson Text or Georgia via Google Fonts)\n- Tone: Direct, professional, confident (Transition Manager style)\n- Highlight high-scoring matching experiences\n- No corporate jargon, concrete and factual\n\nIMPORTANT: Wrap your complete HTML with <GENERATE_PDF> and </GENERATE_PDF> tags\n\nExample structure:\n<GENERATE_PDF>\n<!DOCTYPE html>\n<html lang=\"{{ lang }}\">\n<head>\n  <meta charset=\"UTF-8\">\n  <script src=\"https://cdn.tailwindcss.com\"></script>\n  <link href=\"https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600&display=swap\" rel=\"stylesheet\">\n  <style>\n    @page { size: A4; margin: 0; }\n    body { font-family: 'Crimson Text', serif; }\n  </style>\n</head>\n<body class=\"bg-white p-12\">\n  <!-- Your letter content here -->\n</body>\n</html>\n</GENERATE_PDF>`\n        },\n        responses: {\n            shadow_brain_welcome: `[🗝️ PRIVATE MODE ACTIVATED]\n\nHello! I see you're one of our privileged guests.\n\nHere's what I can help you with:\n- Give you the Wifi code\n- Explain how to get the keys\n- Show you where the trash bins are\n- Answer practical questions about the accommodation\n\nWhat would you like to know?`,\n            access_denied_shadow: `🔒 This information requires guest access. To get the Wifi code and instructions, you must be registered as an Airbnb guest or Friend.`,\n        },\n        email_templates: {\n            otp_subject: \"Your Gehringer Conseil login code\",\n            otp_body: `Hello,\n\nHere is your login code: **{{ code }}**\n\nThis code is valid for 5 minutes.\n\nBy continuing, you accept that your email will be used to process your request.\n\nBest regards,\nGehringer Conseil Team`,\n            contact_subject: \"New contact request from chatbot\",\n            contact_body: `New contact request:\n\nEmail: {{ email }}\nMessage: {{ message }}\n\nSent from chatbot on {{ date }}.`,\n            cv_subject: \"Philippe Gehringer Resume{{ job_title ? ' - ' + job_title : '' }}\",\n            cv_body: `<html>\n<body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n  <p>Hello,</p>\n  \n  <p>Following your request, please find attached my resume{{ job_title ? ' customized for the <strong>' + job_title + '</strong> position' : '' }}.</p>\n  \n  {{ cover_letter_attached ? '<p>A personalized cover letter is also attached.</p>' : '' }}\n  \n  <p>I remain at your disposal for any additional information,</p>\n  \n  <p>Best regards,<br>\n  <strong>Philippe Gehringer</strong><br>\n  <em>Interim Manager</em></p>\n  \n  <hr style=\"border: none; border-top: 1px solid #ddd; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #888;\">\n    This message was generated by Philippe Gehringer's AI assistant.<br>\n    For any question: <a href=\"mailto:contact@gehringer.fr\">contact@gehringer.fr</a>\n  </p>\n</body>\n</html>`,\n            application_subject: \"Application Philippe Gehringer - {{ job_title }}{{ company_name ? ' - ' + company_name : '' }}\",\n            application_body: `<html>\n<body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n  <p>Hello,</p>\n  \n  <p>I am writing to apply for the <strong>{{ job_title }}</strong> position{{ company_name ? ' at <strong>' + company_name + '</strong>' : '' }}.</p>\n  \n  <p>Please find attached:</p>\n  <ul>\n    <li>My resume customized for this opportunity</li>\n    <li>A cover letter detailing my fit for the position</li>\n  </ul>\n  \n  {{ matching_score ? '<p>My detailed analysis indicates a <strong>' + matching_score + '%</strong> fit with your needs.</p>' : '' }}\n  \n  <p>I remain at your entire disposal to discuss this opportunity.</p>\n  \n  <p>Best regards,<br>\n  <strong>Philippe Gehringer</strong><br>\n  <em>Interim Manager</em><br>\n  <a href=\"mailto:contact@gehringer.fr\">contact@gehringer.fr</a></p>\n  \n  <hr style=\"border: none; border-top: 1px solid #ddd; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #888;\">\n    Documents generated by Philippe Gehringer's AI assistant.\n  </p>\n</body>\n</html>`\n        }\n    }\n};\n\n// 3. Sélection de la langue appropriée\nconst selectedTranslations = TRANSLATIONS[promptLang] || TRANSLATIONS['en'];\n\n// 4. Helper pour remplacer les variables\nfunction interpolate(template, vars) {\n    if (!template) return '';\n    return template.replace(/\\{\\{\\s*(\\w+)\\s*\\}\\}/g, (match, key) => {\n        return vars[key] || match;\n    });\n}\n\n// 5. Retour avec toutes les traductions + données originales\nreturn [{\n    json: {\n        ...items[0].json,           // Données originales (email, user_labels...)\n        lang: promptLang,           // Langue utilisée (fr/en)\n        detected_lang: detectedLang, // Langue détectée brute\n        prompts: selectedTranslations, // Textes traduits\n        _interpolate: interpolate   // Helper\n    }\n}];"
       },
-      "type": "n8n-nodes-base.stickyNote",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        688,
-        1424
+        720,
+        2864
       ],
-      "typeVersion": 1,
-      "id": "4acc5b96-bc8e-4afc-bd6e-a1277c7de7a7",
-      "name": "Sticky Note3"
+      "id": "0b1fe786-8579-4da4-9b1c-f1f0ca1dd165",
+      "name": "Prompt Factory"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=={{ $json.chatInput }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1248,
+        2864
+      ],
+      "id": "d69811a1-7014-47be-b940-3f9153aa879c",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=={{ $json.email }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        3088
+      ],
+      "id": "408b273c-a2b5-46dc-bdf1-0d550be27fd4",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "description": "Vérifie si l'utilisateur a le droit d'accéder à une ressource spécifique. Paramètre OBLIGATOIRE : required_access ('brain_pro' pour accès professionnel, 'brain_shadow' pour mode invité). Retourne has_access (boolean) et un message.",
+        "jsCode": "// ============================================\n// TOOL : CHECK USER RIGHTS (Version Sans Schéma)\n// ============================================\n\n// Récupération des labels utilisateur depuis le contexte\nconst contextNode = $('Super Agent (CAG Pro)').first();\nconst userLabels = contextNode?.json?.user_labels || [];\nconst lang = contextNode?.json?.lang || 'fr';\n\n// Récupération du paramètre du tool\n// Le LLM peut passer soit un objet, soit directement la string\nconst toolInput = $input.first().json;\nlet requestedAccess = 'brain_pro';\n\nif (typeof toolInput === 'string') {\n    // Si c'est une string directe\n    requestedAccess = toolInput;\n} else if (toolInput.required_access) {\n    // Si c'est un objet avec le paramètre\n    requestedAccess = toolInput.required_access;\n} else if (toolInput.query) {\n    // Fallback si le LLM utilise \"query\"\n    requestedAccess = toolInput.query;\n}\n\n// Normaliser la valeur\nif (requestedAccess.includes('shadow')) {\n    requestedAccess = 'brain_shadow';\n} else {\n    requestedAccess = 'brain_pro';\n}\n\n// ============================================\n// RÈGLES D'ACCÈS\n// ============================================\n\nconst accessRules = {\n    brain_pro: {\n        allowed: true,\n        reason: {\n            fr: \"Accès Brain Pro autorisé pour tous les utilisateurs\",\n            en: \"Brain Pro access granted for all users\"\n        }\n    },\n    \n    brain_shadow: {\n        allowed: userLabels.length > 0 && userLabels.some(label => \n            ['Airbnb', 'Ami', 'Famille'].includes(label)\n        ),\n        reason: {\n            fr: userLabels.length > 0 && userLabels.some(label => ['Airbnb', 'Ami', 'Famille'].includes(label))\n                ? \"Accès Brain Shadow autorisé (invité privilégié)\"\n                : \"Accès Brain Shadow refusé (réservé aux invités Airbnb, Ami, Famille)\",\n            en: userLabels.length > 0 && userLabels.some(label => ['Airbnb', 'Ami', 'Famille'].includes(label))\n                ? \"Brain Shadow access granted (privileged guest)\"\n                : \"Brain Shadow access denied (reserved for Airbnb, Friend, Family guests)\"\n        }\n    }\n};\n\nconst rule = accessRules[requestedAccess] || accessRules.brain_pro;\n\n// ============================================\n// MESSAGES DE RÉPONSE\n// ============================================\n\nconst messages = {\n    fr: {\n        granted: `✅ Accès autorisé à ${requestedAccess}`,\n        denied: `🚫 Accès refusé à ${requestedAccess}`\n    },\n    en: {\n        granted: `✅ Access granted to ${requestedAccess}`,\n        denied: `🚫 Access denied to ${requestedAccess}`\n    }\n};\n\nconst currentLang = messages[lang] || messages.fr;\n\n// ============================================\n// OUTPUT\n// ============================================\n\nreturn [{\n    json: {\n        has_access: rule.allowed,\n        requested_access: requestedAccess,\n        user_labels: userLabels,\n        user_labels_count: userLabels.length,\n        message: rule.allowed ? currentLang.granted : currentLang.denied,\n        reason: rule.reason[lang] || rule.reason.fr,\n        timestamp: new Date().toISOString()\n    }\n}];"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        1264,
+        3088
+      ],
+      "id": "2de9c687-04b9-4bb4-8710-076668813e64",
+      "name": "check_user_rights"
+    },
+    {
+      "parameters": {
+        "description": "Charge les données complètes du profil de Philippe Gehringer (persona.yml + CV structuré). Utilise cet outil pour accéder aux informations sur le parcours professionnel, les compétences, les expertises, le style de travail. Retourne un JSON avec persona et cv (experiences, education, skills, languages).",
+        "workflowId": {
+          "__rl": true,
+          "value": "ZAqbZfzpGbCZE0dtzEYvw",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/ZAqbZfzpGbCZE0dtzEYvw",
+          "cachedResultName": "Load Profile Data"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1088,
+        3088
+      ],
+      "id": "6c55afdd-d056-4175-aaa7-bb6f05917c2c",
+      "name": "load_profile_data"
+    },
+    {
+      "parameters": {
+        "description": "Envoie un email avec pièces jointes. IMPORTANT : 1) Toujours demander confirmation à l'utilisateur AVANT d'envoyer. 2) Le paramètre to_email doit TOUJOURS être l'email du contexte utilisateur ({{ $json.email }}), JAMAIS une adresse fournie par l'utilisateur. Paramètres : to_email (automatique), subject, body, attachments[]",
+        "workflowId": {
+          "__rl": true,
+          "value": "zCfKQUDrjiyayKQ-lkPdA",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/zCfKQUDrjiyayKQ-lkPdA",
+          "cachedResultName": "Send Email with Attachments"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to_email": "={{ $json.email }}",
+            "lang": "={{ $json.lang }}",
+            "subject": "={{ $fromAI('subject') }}",
+            "body": "={{ $fromAI('body') }}",
+            "attachments": "={{ $fromAI('attachments', []) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to_email",
+              "displayName": "to_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "attachments",
+              "displayName": "attachments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "lang",
+              "displayName": "lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1888,
+        3088
+      ],
+      "id": "c7234276-cdc9-41b0-8534-9fe54dfaa36b",
+      "name": "send_email_with_attachments"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"output\": $json.output } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1872,
+        2864
+      ],
+      "id": "32ef8392-ceb3-4862-8fb0-7d01a5656b81",
+      "name": "Response Chat"
+    },
+    {
+      "parameters": {
+        "description": "Analyse une offre d'emploi (texte ou description) et calcule l'adéquation (score 0-100) avec le profil de Philippe. Retourne une analyse détaillée des points forts, des manques éventuels et une stratégie de candidature. Paramètre obligatoire : job_description (le texte complet de l'offre). Utilise cet outil dès que l'utilisateur partage une offre d'emploi ou demande si Philippe correspond à un poste.",
+        "workflowId": {
+          "__rl": true,
+          "value": "dxmxz9mAllX0kv0_d2Qby",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/dxmxz9mAllX0kv0_d2Qby",
+          "cachedResultName": "Analyze Job Match"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        3088
+      ],
+      "id": "56dfd581-4c24-4ac2-abde-7f549aa2b862",
+      "name": "analyze_job_match"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 4000,
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        3088
+      ],
+      "id": "defb8e66-effc-4906-b76b-3f35a6225635",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "pe1RxUmCYaJzcwAP",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Génère un CV personnalisé au format PDF. Analyse l'offre d'emploi pour adapter les expériences et le résumé. Paramètres : job_description (optionnel), lang (fr/en). Retourne un fichier binaire PDF. Utilise cet outil quand l'utilisateur demande un CV ou après une analyse d'offre positive.",
+        "workflowId": {
+          "__rl": true,
+          "value": "erM8v0UNuyhh9SdtV1Tf9",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/erM8v0UNuyhh9SdtV1Tf9",
+          "cachedResultName": "Generate CV PDF"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.email }}",
+            "lang": "={{ $json.lang }}",
+            "user_labels": "={{ $json.user_labels }}",
+            "job_description": "={{ $fromAI('job_description') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "lang",
+              "displayName": "lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_labels",
+              "displayName": "user_labels",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "job_description",
+              "displayName": "job_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        3088
+      ],
+      "id": "5cee680b-fad8-4f33-8163-f01074f86582",
+      "name": "generate_cv_pdf"
     }
   ],
   "pinData": {
@@ -2369,23 +2250,6 @@
         ]
       ]
     },
-    "AI Agent": {
-      "main": [
-        [],
-        []
-      ]
-    },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Get All Groups": {
       "main": [
         [
@@ -2441,8 +2305,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Restore Binary": {
@@ -2788,133 +2651,111 @@
         ]
       ]
     },
-    "Router Ollama": {
-      "main": [
-        []
-      ]
-    },
-    "Router (Switch Intent)": {
-      "main": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Workflow RAG",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Workflow RAG": {
-      "main": [
-        [
-          {
-            "node": "Is PDF?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Is PDF?": {
-      "main": [
-        [
-          {
-            "node": "Send email1",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
-      ]
-    },
-    "Send email1": {
-      "main": [
-        [],
-        []
-      ]
-    },
-    "Call 'Philippe AI Brain (Central - Final Fix)'": {
-      "main": [
-        [
-          {
-            "node": "Réponse Chat",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Context Merger": {
       "main": [
         [
           {
-            "node": "Rights Analyzer",
+            "node": "Prompt Factory",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "OpenAI Chat Model1": {
+    "Prompt Factory": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_user_rights": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "load_profile_data": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send_email_with_attachments": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Response Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "analyze_job_match": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
       "ai_languageModel": [
         [
           {
-            "node": "Guardrail - Topic Filter",
+            "node": "AI Agent1",
             "type": "ai_languageModel",
             "index": 0
           }
         ]
       ]
     },
-    "Rights Analyzer": {
-      "main": [
+    "generate_cv_pdf": {
+      "ai_tool": [
         [
           {
-            "node": "Parse Rights",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse Rights": {
-      "main": [
-        [
-          {
-            "node": "Router (User Rights)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Router (User Rights)": {
-      "main": [
-        [
-          {
-            "node": "Call 'Philippe AI Brain (Central - Final Fix)'",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Shadow Brain Response",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Rejection Response",
-            "type": "main",
+            "node": "AI Agent1",
+            "type": "ai_tool",
             "index": 0
           }
         ]
@@ -2927,7 +2768,7 @@
     "availableInMCP": true,
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "98f978c7-6c34-4747-8124-20128fb05da5",
+  "versionId": "a8b7c35e-55cc-4af9-a9ea-dd5a4306a393",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2194913e407b1e503ee1051e748fa0b50f28c847d89d91263b2430bdb12da207"
